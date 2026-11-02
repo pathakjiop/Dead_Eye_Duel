@@ -1,417 +1,203 @@
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=venom&color=0:0d0000,40:7a0000,100:ff3b00&height=300&section=header&text=DEAD%20EYE%20DUEL&fontSize=82&fontColor=ffd166&stroke=000000&strokeWidth=3&animation=twinkling&fontAlignY=42&desc=%F0%9F%92%80%20REAL-TIME%20MEXICAN%20STANDOFF%20%E2%80%A2%20QUICK-DRAW%20GAME%20%F0%9F%92%80&descSize=20&descAlignY=66" width="100%"/>
+<img src="./public/dead-eye-duel-banner.jpg" alt="Dead Eye Duel — two gunslingers facing off at sunset" width="100%" />
 
-<a href="https://dead-eye-duel.vercel.app">
-  <img src="https://readme-typing-svg.demolab.com?font=Rye&size=28&duration=2800&pause=700&color=FF3B00&center=true&vCenter=true&width=760&lines=%F0%9F%8C%B5+TWO+GUNSLINGERS.+ONE+BULLET.;%F0%9F%93%B1+YOUR+PHONE+IS+THE+REVOLVER.;%E2%8F%B1%EF%B8%8F+FASTEST+FLICK+WINS.+NO+MERCY.;%F0%9F%92%80+FIRE+EARLY+AND+YOU+DIE.;%C2%A1FUEGO!+%C2%A1FUEGO!+%C2%A1FUEGO!" alt="typing banner"/>
-</a>
+### TWO GUNSLINGERS · ONE SIGNAL · ONE WINNER
 
-<br/>
+**A real-time, mobile-first quick-draw game. Your phone is the revolver.**
 
-```
-                       ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-        ┌──────────────┤  ☠  H I G H   N O O N   ☠  ├───────────────┐
-        │              ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀       │
-        │                                                           │
-        │   ▄▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀█▄     ✦ ✦ ✦     ▄█▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▄   │
-        │  ▐ ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▀═══╗   ╔═══▀▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄ ▌  │
-        │   ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀ ╔═╝ ☼ ╚═╗ ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀   │
-        │      P L A Y E R  1   ║ V S ║   P L A Y E R  2          │
-        └───────────────────────────────────────────────────────────┘
-```
+[![Play Live](https://img.shields.io/badge/PLAY_LIVE-Dead_Eye_Duel-d45b2f?style=for-the-badge&labelColor=171313)](https://dead-eye-duel.vercel.app)
+[![React](https://img.shields.io/badge/React-18.3-61DAFB?style=flat-square&logo=react&logoColor=111)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-5-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vite.dev/)
+[![PeerJS](https://img.shields.io/badge/PeerJS-WebRTC-ef8354?style=flat-square)](https://peerjs.com/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 
-<p>
-  <a href="https://dead-eye-duel.vercel.app"><img src="https://img.shields.io/badge/%F0%9F%8E%AE_PLAY_NOW-LIVE_DEMO-ff3b00?style=for-the-badge&labelColor=1a0000" /></a>
-  <img src="https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black&labelColor=1a0000" />
-  <img src="https://img.shields.io/badge/Vite-⚡_Blazing-646CFF?style=for-the-badge&logo=vite&logoColor=white&labelColor=1a0000" />
-  <img src="https://img.shields.io/badge/WebRTC-P2P-ff3b00?style=for-the-badge&logo=webrtc&logoColor=white&labelColor=1a0000" />
-</p>
-<p>
-  <img src="https://img.shields.io/badge/PeerJS-No_Backend-ffd166?style=flat-square&labelColor=1a0000" />
-  <img src="https://img.shields.io/badge/Tailwind_CSS-Styled-38BDF8?style=flat-square&logo=tailwindcss&logoColor=white&labelColor=1a0000" />
-  <img src="https://img.shields.io/badge/Framer_Motion-Animated-ff0055?style=flat-square&logo=framer&logoColor=white&labelColor=1a0000" />
-  <img src="https://img.shields.io/badge/Web_Audio_API-Zero_MP3s-9b5de5?style=flat-square&labelColor=1a0000" />
-  <img src="https://img.shields.io/badge/Server_Code-ZERO-00c853?style=flat-square&labelColor=1a0000" />
-  <img src="https://img.shields.io/badge/Mobile-First-ff9100?style=flat-square&labelColor=1a0000" />
-</p>
-
-<h3>
-  <a href="https://dead-eye-duel.vercel.app">🎮 Play</a> ·
-  <a href="#-how-the-duel-works">⚔️ The Duel</a> ·
-  <a href="#-the-weapon-colt-peacemaker-45">🔫 Weapon</a> ·
-  <a href="#-run-it-locally">🚀 Run It</a> ·
-  <a href="#-easter-eggs--secrets">🥃 Secrets</a>
-</h3>
+[**Play the game**](https://dead-eye-duel.vercel.app) · [How it works](#-the-duel) · [Tech stack](#-built-with) · [Run locally](#-run-locally) · [Contribute](#-contributing)
 
 </div>
 
-<img src="https://capsule-render.vercel.app/api?type=rect&color=0:ff3b00,50:7a0000,100:ff3b00&height=4&section=header" width="100%"/>
+---
 
-## 💀 WHAT IS THIS?
+## 🌵 The story
 
-> *"When the sun hits the top of the church tower, one of you ain't walking out of this cantina."*
+The street is quiet. Your rival is watching. Keep your phone holstered, wait for the signal, then draw as fast as you can.
 
-**DEAD EYE DUEL** is a **mobile-first, two-player, real-time quick-draw game** where **your actual phone is the gun**. Put it in your pocket. Wait for the signal. Rip it out like a revolver. **First valid shot wins the round.** Best of 3 and you earn the title:
+**Dead Eye Duel** is a two-player reaction game built around a simple idea: use your phone's motion sensors to perform a quick-draw gesture. Play online with a friend, compare reaction times, and try to become **El Pistolero**.
 
-<div align="center">
+No dedicated game backend or database is required. Players connect through **PeerJS/WebRTC**, while the game handles round timing, reactions, sound effects, and match results in the browser.
 
-# 🏆 ⋆｡°✩ EL PISTOLERO ✩°｡⋆ 🏆
+## ⚔️ The duel
 
-</div>
-
-No custom backend. No database. No server code. No audio files.
-Just **React + WebRTC + pure synthesized sound + your twitchy wrist.**
-
-<table align="center">
-<tr>
-<td align="center"><h2>0</h2><sub>BACKEND SERVERS</sub></td>
-<td align="center"><h2>0</h2><sub>AUDIO FILES</sub></td>
-<td align="center"><h2>6</h2><sub>CHAMBERS</sub></td>
-<td align="center"><h2>6</h2><sub>CALAVERA AVATARS</sub></td>
-<td align="center"><h2>∞</h2><sub>GRUDGES</sub></td>
-</tr>
-</table>
-
-<img src="https://capsule-render.vercel.app/api?type=rect&color=0:ff3b00,50:7a0000,100:ff3b00&height=4&section=header" width="100%"/>
-
-## ⚔️ HOW THE DUEL WORKS
+A match is played as a best-of-three: the first player to win two rounds takes the match.
 
 ```mermaid
-flowchart LR
-    A([🌵 HOME<br/>pick name + calavera]) --> B([🏚️ CREATE / JOIN ROOM<br/>4-letter code])
-    B --> C([🍻 LOBBY<br/>both players LISTO])
-    C --> D([🤐 HOLSTER<br/>3 · 2 · 1 + heartbeat])
-    D --> E([🌑 WAIT<br/>2.2s – 5.8s of dread])
-    E -->|shoot now| X([💀 FALSE START<br/>instant round loss])
-    E -->|delay ends| F([🔥 ¡FUEGO!<br/>DRAW!!!])
-    F --> G([💥 RESULT<br/>287ms vs 312ms])
-    G -->|first to 2| H([🏆 EL PISTOLERO])
-    G -->|else| D
-    X --> G
-    style X fill:#7a0000,color:#fff,stroke:#ff3b00
-    style F fill:#ff3b00,color:#fff,stroke:#ffd166
-    style H fill:#ffd166,color:#000,stroke:#ff3b00
+flowchart TD
+    A[Choose a name and calavera] --> B[Create or join a room]
+    B --> C[Both players get ready]
+    C --> D[Holster countdown: 3 · 2 · 1]
+    D --> E[Wait for the random signal]
+    E -->|Draw too early| F[False start: lose the round]
+    E -->|¡FUEGO!| G[Draw and shoot]
+    G --> H[Compare reaction times]
+    F --> I[Round result]
+    H --> I
+    I --> J{Has a player won 2 rounds?}
+    J -->|No| D
+    J -->|Yes| K[Match winner]
 ```
 
-### 🎬 THE FOUR PHASES OF DEATH
+### Round phases
 
-| Phase | Screen | What You Do | What Happens If You Screw Up |
-|:-----:|:------:|:------------|:-----------------------------|
-| **1 · HOLSTER** 🤐 | Countdown + heartbeat + haptic pulses | Phone away. Hands down. Breathe. | Nothing. Yet. |
-| **2 · WAIT** 🌑 | **Pitch black.** Eyes staring across the void. | Stay frozen. Random 2.2–5.8s delay. | **FALSE START → you lose the round. Instantly.** |
-| **3 · DRAW!** 🔥 | Screen flashes **RED**. Trumpets scream. **¡FUEGO!** | **SHOOT. NOW.** | You were too slow. Rest in peace. |
-| **4 · RESULT** 💥 | Recoil, muzzle flash, cylinder spins +60°, bullet hole punched into the screen | Watch the ms comparison | Bullet holes **persist the whole match.** |
+| Phase | What happens | Your move |
+|---|---|---|
+| **1. Holster** | A three-second countdown builds tension. | Keep your phone down. |
+| **2. Wait** | The game waits a random **2.2–5.8 seconds**. | Stay still. Drawing early is a false start. |
+| **3. ¡FUEGO!** | The draw signal appears for both players. | Pull and aim, tap the screen, or press `Space`. |
+| **4. Result** | Reaction times and the round winner are shown. | Get ready for the next round. |
 
-<div align="center">
+**Fair-play rules:** a false start forfeits the round. Shots within **15 ms** of each other count as a simultaneous draw. The host coordinates the round and sends the result to the other player.
 
-```
-   ROUND 1  ▸  ▮ ░         ROUND 2  ▸  ▮ ▮         MATCH  ▸  ☠ EL PISTOLERO ☠
-   ─────────────────────────────────────────────────────────────────────────
-     YOU  287ms  ⚡          YOU  301ms  ⚡          Mariachi fanfare + confetti
-     RIVAL 312ms 💀         RIVAL 298ms 💀 ← lol      + REMATCH button ready
-```
+## 📱 Your phone is the revolver
 
-</div>
+Choose the input method that suits your device:
 
-<img src="https://capsule-render.vercel.app/api?type=rect&color=0:ff3b00,50:7a0000,100:ff3b00&height=4&section=header" width="100%"/>
+- **Motion draw:** uses `DeviceMotionEvent` and `DeviceOrientationEvent` to detect a quick movement and forward-facing phone angle.
+- **Adjustable sensitivity:** the default acceleration threshold is **13.5 m/s²**. The threshold can be adjusted in the lobby; the accepted pitch range is **45°–135°**.
+- **Tap / keyboard fallback:** tap or click to shoot, or press `Space` on a keyboard.
+- **Permission handling:** browsers that require motion access (including supported iOS versions) can request it from the lobby.
+- **Haptics:** vibration feedback is used when the browser and device support it.
 
-## 🔫 THE WEAPON: COLT PEACEMAKER .45
+> **Mobile tip:** motion-sensor access is restricted by some browsers and generally requires a secure HTTPS origin. Grant the requested permission, or switch to tap mode if sensors are unavailable.
 
-Drawn in **100% pure SVG**. No images. Every part is alive:
+## 🔫 A little theatrical flair
 
-```
-                    ┌─── front sight blade
-                    ▼
-   ╭───────────────╥─╮                          ░▒▓█ BOOM █▓▒░
-   │▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓║▓│══════════════◄── long octagonal steel barrel
-   ╰──┬────────╥───╨─╯   ▲ ejector tube
-      │  ◎ ◎   ║  ┌───────┐
-   ┌──┴───┐  ╔═╩══╡ ⚙ ⚙ ⚙ │◄── 6-CHAMBER CYLINDER (rotates 60° per shot)
-   │ ▓▓▓▓ │◄─╝    └───────┘
-   │ blued│  ╱ ◄── COCKING HAMMER (cocks on draw, snaps on trigger)
-   └──╥───┘ ╱
-      ╚═══╗◄── curved trigger guard
-          ▼
-```
+The duel is more than a timer:
 
-- 🔩 **Visibly rotating 6-chamber cylinder** — advances **60°** on every shot, with ratchet clicks
-- 🪓 **Cocking hammer** — pulls back during the draw, snaps forward on trigger
-- 💢 **Heavy recoil kickback**
-- 💥 **Multi-point muzzle flash** + smoke ring
-- 🎨 Blued engraved frame, screw accents, the works
+- An animated six-chamber revolver, with a **60° cylinder turn** on each shot.
+- Hammer, recoil, muzzle-flash, and smoke animations.
+- Procedurally generated sound effects through the **Web Audio API** — no bundled MP3 sound files are needed for the game effects.
+- Six selectable calavera characters.
+- A desert-western visual theme, a match scoreboard, bullet-hole effects, and a playful Tequila Mode.
 
-<img src="https://capsule-render.vercel.app/api?type=rect&color=0:ff3b00,50:7a0000,100:ff3b00&height=4&section=header" width="100%"/>
+## ⚖️ How online timing works
 
-## 📱 HOW SHOOTING WORKS
+Dead Eye Duel uses PeerJS to establish a peer-to-peer WebRTC data connection. Once connected, the players exchange game events over that connection.
 
-<table>
-<tr>
-<th width="33%">🤳 MOTION GESTURE</th>
-<th width="33%">👆 TAP / SPACEBAR</th>
-<th width="33%">📳 HAPTICS</th>
-</tr>
-<tr valign="top">
-<td>
+1. The host schedules the draw after the holster countdown and a random delay.
+2. The connection performs **five ping/pong samples** to estimate clock offset and round-trip time.
+3. Each player measures their reaction against the locally scheduled draw time.
+4. The host evaluates the reported shots. A difference of **15 ms or less** is treated as a simultaneous draw.
 
-Rip the phone out of your pocket like a revolver.
+Peer-to-peer connectivity can depend on the players' networks and NAT configuration. The app currently configures Google and Twilio STUN endpoints in `src/hooks/usePeer.js`; restrictive networks may need a TURN service.
 
-- Uses `DeviceMotionEvent` + `DeviceOrientationEvent`
-- Detects an upward acceleration spike **> 13.5 m/s²**
-- Followed by a forward pitch tilt of **50° – 130°**
-- **Sensitivity slider** in the Lobby
-- **iOS 13+**: explicit `DeviceMotionEvent.requestPermission()` button
+## 🧰 Built with
 
-</td>
-<td>
+| Area | Technology | Role |
+|---|---|---|
+| UI | React 18 | Component-based game screens and state |
+| Development / build | Vite 5 | Local development and production build |
+| Styling | Tailwind CSS 3 | Responsive visual design |
+| Animation | Framer Motion | Motion, recoil, transitions, and effects |
+| Multiplayer | PeerJS + WebRTC | Room connections and peer data messages |
+| Sound | Web Audio API | Synthesized game audio |
+| Device input | Device Motion / Orientation APIs | Motion-based quick-draw input |
+| Effects | Canvas Confetti, Lucide React | Match celebration and interface icons |
 
-The coward's (and desktop's) way.
+## 📁 Project structure
 
-- Tap / click **anywhere**
-- Hit **`SPACEBAR`**
-- Auto-enabled on desktop or when motion permission isn't granted
-- Optional "Tap to shoot" toggle in the Lobby
-
-</td>
-<td>
-
-Feel the dread in your bones.
-
-- `navigator.vibrate`
-- 💓 Heartbeat pulses during holster
-- 💥 Recoil kick on shot
-- ❌ Angry buzz on false start
-
-</td>
-</tr>
-</table>
-
-<img src="https://capsule-render.vercel.app/api?type=rect&color=0:ff3b00,50:7a0000,100:ff3b00&height=4&section=header" width="100%"/>
-
-## 🎶 100% PROCEDURAL AUDIO — ZERO MP3s
-
-Every sound is **synthesized live** with the **Web Audio API**. Sub-millisecond latency. Not a single audio file is shipped.
-
-| 🔊 Sound | 🧪 Recipe |
-|:--|:--|
-| 🔫 **Gunshot** | Exponential white/pink noise burst → steep **4.5 kHz** lowpass sweep → sub-bass punch **180 Hz → 32 Hz** |
-| 🔧 **Revolver Cock** | Dual-stage metal clicks at **2600 Hz** + **3400 Hz** |
-| 🎰 **Cylinder Spin** | Rapid 6-stage ratchet clicks |
-| 💓 **Heartbeat** | Low sine "lub-dub" kicks during the holster countdown |
-| 🎺 **Draw Stinger** | Morricone / mariachi brass chord (**C5 · E5 · G5**) on **¡FUEGO!** |
-| 🏆 **Win Fanfare** | Triumphant Mexican brass melody |
-| 🎼 **Western Whistle** | Dual sine glide with **5.5 Hz vibrato** |
-| 🌬️ **Desert Wind** | Modulated pink noise through a bandpass filter |
-| 💫 **Ricochet** | High-pitch slide **2600 Hz → 220 Hz** |
-
-<img src="https://capsule-render.vercel.app/api?type=rect&color=0:ff3b00,50:7a0000,100:ff3b00&height=4&section=header" width="100%"/>
-
-## ⚖️ FAIRNESS & NETWORK SYNC
-
-*"Lag" is not an excuse in a duel.*
-
-```mermaid
-sequenceDiagram
-    participant H as 🤠 HOST
-    participant R as 🤠 RIVAL
-    Note over H,R: 5× PING/PONG on connect → median clock offset + RTT
-    H->>R: hostDrawAt (random 2.2–5.8s delay, host-authoritative)
-    Note over H,R: ...dead silence, black screen...
-    H->>H: 🔥 DRAW! reactionMs = shotTime − drawScheduledAt
-    R->>R: 🔥 DRAW! reactionMs = shotTime − drawScheduledAt
-    H-->>R: my reaction time
-    R-->>H: my reaction time
-    Note over H,R: Both within 15ms? ⇒ SIMULTANEOUS DRAW ⇒ replay round
-```
-
-1. 👑 **Host-authoritative timing** — the host rolls the random delay and schedules `hostDrawAt`
-2. 🏓 **Ping/Pong clock sync** — 5 samples on connect → median offset (`opponentClock − hostClock`) + RTT
-3. ⏱️ **Local reaction math** — each device computes `reactionMs = localShotTime − localDrawScheduledAt`
-4. 🤝 **15 ms draw window** — shots within 15 ms are a **simultaneous draw** and the round is replayed
-
-<img src="https://capsule-render.vercel.app/api?type=rect&color=0:ff3b00,50:7a0000,100:ff3b00&height=4&section=header" width="100%"/>
-
-## 🧰 TECH STACK
-
-<div align="center">
-
-<img src="https://skillicons.dev/icons?i=react,vite,tailwind,js,html,css,vercel,npm&theme=dark" />
-
-</div>
-
-| Layer | Tech | Why |
-|:--|:--|:--|
-| ⚛️ UI | **React (Vite)** | Instant HMR, tiny bundle |
-| 🌐 Networking | **PeerJS / WebRTC** | Peer-to-peer. Free public broker for signaling. **No server.** |
-| 🎨 Styling | **Tailwind CSS** | Mobile-first, fast |
-| 🎞️ Animation | **Framer Motion** | Recoil, flashes, screen shake |
-| 🔊 Audio | **Web Audio API** | Everything synthesized live |
-| 📳 Sensors | **DeviceMotion / DeviceOrientation** | Phone = revolver |
-
-```
+```text
 Dead_Eye_Duel/
-├── 📁 public/              # static assets
-├── 📁 src/                 # the whole saloon
-│   └── hooks/usePeer.js    # WebRTC / ICE config lives here
-├── 📄 index.html
-├── ⚙️ vite.config.js
-├── 🎨 tailwind.config.js
-├── 🎨 postcss.config.js
-└── 📦 package.json
+├── public/
+│   ├── dead-eye-duel-banner.jpg
+│   ├── favicon.svg
+│   └── manifest.json
+├── src/
+│   ├── components/       # Revolver, avatars, backgrounds, visual effects
+│   ├── game/             # Rules, constants, avatars, reducer, sound engine
+│   ├── hooks/            # Peer connection, motion input, sound hooks
+│   ├── screens/          # Home, create/join, lobby, duel, match result
+│   ├── App.jsx
+│   ├── index.css
+│   └── main.jsx
+├── index.html
+├── package.json
+├── postcss.config.js
+├── tailwind.config.js
+└── vite.config.js
 ```
 
-<img src="https://capsule-render.vercel.app/api?type=rect&color=0:ff3b00,50:7a0000,100:ff3b00&height=4&section=header" width="100%"/>
+## 🚀 Run locally
 
-## 🚀 RUN IT LOCALLY
+**Requirements:** Node.js and npm.
 
 ```bash
-# 1️⃣ Load your ammo
+# Clone the repository
+git clone https://github.com/pathakjiop/Dead_Eye_Duel.git
+cd Dead_Eye_Duel
+
+# Install dependencies
 npm install
 
-# 2️⃣ Open the saloon doors
+# Start the development server
 npm run dev
-
-# 3️⃣ Forge for production
-npm run build
 ```
 
-### 🧪 Testing the Duel
+Open the local Vite URL shown in your terminal.
 
-<details>
-<summary><b>🖥️ Option A — Two browser tabs, one computer (fastest)</b></summary>
+### Test with two players
 
-1. Open `http://localhost:5173` in **Tab 1** (Host)
-2. Click **CREATE ROOM** → copy the 4-letter code (e.g. `K9W2`)
-3. Open `http://localhost:5173/?room=K9W2` in **Tab 2** (Rival) — or hit **Join Room** and type it
-4. Both players click **READY TO DRAW**
-5. Host clicks **START DUEL MATCH**
-6. When **¡FUEGO!** appears → mash `SPACE` or click the screen 🔫
+1. Open the game in two browser tabs or on two devices.
+2. In the first tab, create a room and share its four-character room code.
+3. In the second tab, join using that code.
+4. Both players select **Ready**. The host starts the match once both are ready.
+5. Wait for **¡FUEGO!**, then draw using motion, tap, or `Space`.
 
-</details>
-
-<details>
-<summary><b>📱 Option B — Two real phones on the same Wi-Fi (the real deal)</b></summary>
+For two phones on the same Wi-Fi, expose the Vite dev server to your network:
 
 ```bash
 npm run dev -- --host
 ```
 
-Open the network IP (e.g. `http://192.168.1.X:5173`) on both phones.
+Open the network URL on both devices. Use an HTTPS tunnel or HTTPS deployment when testing motion sensors on devices that require a secure context.
 
-> ⚠️ **Motion sensors require HTTPS.** For local testing with real sensors, tunnel it:
-> ```bash
-> ngrok http 5173
-> ```
-> Open the **HTTPS** ngrok URL on both phones → tap **ENABLE SENSORS** → pocket your phones → **DUEL.**
+## 📦 Build for production
 
-</details>
-
-<img src="https://capsule-render.vercel.app/api?type=rect&color=0:ff3b00,50:7a0000,100:ff3b00&height=4&section=header" width="100%"/>
-
-## 🌐 DEPLOY (HTTPS REQUIRED FOR SENSORS)
-
-<table>
-<tr>
-<td width="50%">
-
-### ▲ Vercel
-```bash
-npm install -g vercel
-vercel
-```
-
-</td>
-<td width="50%">
-
-### 🟩 Netlify
 ```bash
 npm run build
-npx netlify deploy --prod --dir=dist
+npm run preview
 ```
 
-</td>
-</tr>
-</table>
+The production site is generated in `dist/`. Deploy that directory to a static hosting provider such as Vercel or Netlify. Use HTTPS for the most reliable mobile sensor support.
 
-### 🛠️ WebRTC NAT & TURN
+## 🗺️ Future ideas
 
-Default STUN servers: `stun:stun.l.google.com:19302` and `stun:global.stun.twilio.com:3478`.
+- [ ] Spectator mode
+- [ ] Global reaction-time leaderboard
+- [ ] Tournament brackets
+- [ ] More characters and weapon variations
 
-Players on strict corporate / cellular networks or symmetric NATs? Add a TURN server in **`src/hooks/usePeer.js`**:
+## 🤝 Contributing
 
-```js
-config: {
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    // Optional TURN server credentials:
-    // {
-    //   urls: 'turn:your-turn-server.com:3478',
-    //   username: 'user',
-    //   credential: 'password'
-    // }
-  ]
-}
-```
+Found a bug or have an idea for the next showdown? Contributions are welcome.
 
-<img src="https://capsule-render.vercel.app/api?type=rect&color=0:ff3b00,50:7a0000,100:ff3b00&height=4&section=header" width="100%"/>
-
-## 🥃 EASTER EGGS & SECRETS
-
-| | Secret | How |
-|:-:|:--|:--|
-| 🌵 | **TEQUILA MODE** | Click the **cactus button** (top-left of Home). Your screen starts doing a drunken heat-wave wobble. |
-| 🕳️ | **Persistent Bullet Holes** | Every shot punches a cracked crater into the screen. They stay all match. |
-| 💀 | **6 Calavera Avatars** | *El Pistolero · La Calavera · El Bandido · Don Roberto · La Muerte · Señorita Sombra* |
-| 🪵 | **Wooden Scoreboard** | Scratched tally marks for best-of-3. |
-
-<div align="center">
-
-### 💀 CHOOSE YOUR FIGHTER
-
-| 🤠 | 💀 | 🔪 | 🎩 | ☠️ | 🕶️ |
-|:-:|:-:|:-:|:-:|:-:|:-:|
-| **El Pistolero** | **La Calavera** | **El Bandido** | **Don Roberto** | **La Muerte** | **Señorita Sombra** |
-
-</div>
-
-<img src="https://capsule-render.vercel.app/api?type=rect&color=0:ff3b00,50:7a0000,100:ff3b00&height=4&section=header" width="100%"/>
-
-## 🗺️ ROADMAP
-
-- [x] 📱 Phone-as-revolver motion detection
-- [x] 🌐 Serverless P2P duels over WebRTC
-- [x] 🎶 Fully procedural audio engine
-- [x] 🤥 False-start punishment
-- [x] 🥃 Tequila Mode
-- [ ] 🏟️ Spectator mode
-- [ ] 🧾 Global leaderboard of fastest draws
-- [ ] 🤠 Tournament brackets
-- [ ] 🎭 More avatars & weapons
-
-## 🤝 CONTRIBUTING
-
-Think you're faster than the dev? Prove it.
+1. Fork the repository.
+2. Create a feature branch.
+3. Make and test your changes (`npm run build`).
+4. Open a pull request with a clear description.
 
 ```bash
 git clone https://github.com/pathakjiop/Dead_Eye_Duel.git
-cd Dead_Eye_Duel && npm install && npm run dev
+cd Dead_Eye_Duel
+npm install
+npm run dev
 ```
 
-Fork it → branch it → ship it → open a PR. 🔫
+---
 
 <div align="center">
 
-<br/>
+**Think you're faster?** [Step into the duel.](https://dead-eye-duel.vercel.app)
 
-<a href="https://dead-eye-duel.vercel.app">
-  <img src="https://img.shields.io/badge/%F0%9F%92%80_THINK_YOU'RE_FAST_ENOUGH%3F-DRAW!-ff3b00?style=for-the-badge&labelColor=000000" height="48"/>
-</a>
-
-<br/><br/>
-
-**Made with 🔥, 🌵 and a dangerously twitchy trigger finger by [@pathakjiop](https://github.com/pathakjiop)**
-
-<sub>⭐ Star this repo or the sheriff comes for you ⭐</sub>
-
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:ff3b00,50:7a0000,100:0d0000&height=180&section=footer&text=%C2%A1ADIOS%2C%20PISTOLERO!&fontSize=38&fontColor=ffd166&animation=fadeIn&fontAlignY=68" width="100%"/>
+Made with 🔥, 🌵, React, and a dangerously twitchy trigger finger by [@pathakjiop](https://github.com/pathakjiop).
 
 </div>
