@@ -10,8 +10,9 @@ export function useMotionShot({
   onShoot,
   tapToShootFallback = true,
 }) {
-  const [permissionState, setPermissionState] = useState('unknown'); // 'unknown' | 'granted' | 'denied' | 'not-needed'
+  const [permissionState, setPermissionState] = useState('unknown'); // 'unknown' | 'prompt' | 'granted' | 'denied' | 'insecure' | 'unsupported'
   const [sensorsSupported, setSensorsSupported] = useState(false);
+  const [isSecureContext, setIsSecureContext] = useState(true);
   const [sensorValues, setSensorValues] = useState({
     accel: 0,
     pitch: 0,
@@ -19,39 +20,51 @@ export function useMotionShot({
     peakAccel: 0,
   });
 
-  const [sensitivity, setSensitivity] = useState(SENSOR_DEFAULTS.ACCEL_THRESHOLD);
+  const [sensitivity, setSensitivity] = useState(12.0); // Slightly more forgiving default
   const [isTapMode, setIsTapMode] = useState(false);
 
   const lastShotTimestampRef = useRef(0);
   const pitchRef = useRef(90);
-  const recentAccelsRef = useRef([]);
+  const onShootRef = useRef(onShoot);
 
-  // Check if DeviceMotionEvent exists
+  useEffect(() => {
+    onShootRef.current = onShoot;
+  }, [onShoot]);
+
+  // Check if DeviceMotionEvent exists & context security
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      const isSecure = window.isSecureContext ||
+        window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1';
+
+      setIsSecureContext(isSecure);
+
       const hasMotion = 'DeviceMotionEvent' in window;
       const hasOrientation = 'DeviceOrientationEvent' in window;
       const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
       setSensorsSupported(hasMotion && hasOrientation);
 
-      if (!hasMotion || !isMobile) {
-        // Desktop or unsupported browser defaults to tap mode
+      if (!isSecure) {
+        // HTTP context: Mobile browsers block sensors by policy
+        setPermissionState('insecure');
         setIsTapMode(true);
-      }
-
-      // iOS 13+ requires explicit permission request via user action
-      if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
-        setPermissionState('prompt');
-      } else if (hasMotion) {
-        setPermissionState('not-needed');
-      } else {
+      } else if (!hasMotion || !isMobile) {
+        // Desktop or unsupported browser defaults to tap mode
         setPermissionState('unsupported');
+        setIsTapMode(true);
+      } else if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+        // iOS 13+ requires user gesture requestPermission()
+        setPermissionState('prompt');
+      } else {
+        // Android / modern mobile over HTTPS
+        setPermissionState('granted');
       }
     }
   }, []);
 
-  // Request iOS motion permission
+  // Request iOS motion permission directly on user tap
   const requestPermission = useCallback(async () => {
     if (
       typeof DeviceMotionEvent !== 'undefined' &&
@@ -75,7 +88,7 @@ export function useMotionShot({
           return false;
         }
       } catch (err) {
-        console.warn('Error requesting device motion permission:', err);
+        console.warn('Motion permission request error:', err);
         setPermissionState('denied');
         setIsTapMode(true);
         return false;
@@ -89,22 +102,20 @@ export function useMotionShot({
   // Handle trigger firing with debounce
   const triggerShoot = useCallback((source = 'motion') => {
     const now = performance.now();
-    // 600ms debounce to prevent multi-fire
-    if (now - lastShotTimestampRef.current < 600) return;
+    // 500ms debounce
+    if (now - lastShotTimestampRef.current < 500) return;
     lastShotTimestampRef.current = now;
 
-    if (onShoot) {
-      onShoot({ source, timestamp: now });
+    if (onShootRef.current) {
+      onShootRef.current({ source, timestamp: now });
     }
-  }, [onShoot]);
+  }, []);
 
-  // Motion listener
+  // Motion and Orientation event listeners
   useEffect(() => {
     if (!enabled || isTapMode) return;
 
     const handleOrientation = (e) => {
-      // beta is pitch (-180 to 180 degrees)
-      // Phone standing up pointing forward is roughly 60 to 120 degrees
       if (e.beta !== null && e.beta !== undefined) {
         pitchRef.current = e.beta;
         setSensorValues((prev) => ({
@@ -123,13 +134,7 @@ export function useMotionShot({
       const y = acc.y || 0;
       const z = acc.z || 0;
 
-      // Net magnitude
       const magnitude = Math.sqrt(x * x + y * y + z * z);
-
-      recentAccelsRef.current.push({ val: magnitude, time: performance.now() });
-      if (recentAccelsRef.current.length > 10) {
-        recentAccelsRef.current.shift();
-      }
 
       setSensorValues((prev) => ({
         ...prev,
@@ -137,14 +142,12 @@ export function useMotionShot({
         peakAccel: Math.max(prev.peakAccel, Math.round(magnitude * 10) / 10),
       }));
 
-      // Check condition:
-      // 1. Acceleration exceeds threshold (fast draw upward)
-      // 2. Pitch is within aiming forward range (between PITCH_MIN and PITCH_MAX)
+      // Condition: Fast draw acceleration + phone aiming forward (pitch 35-145 deg)
       const currentPitch = Math.abs(pitchRef.current);
       if (
         magnitude >= sensitivity &&
-        currentPitch >= SENSOR_DEFAULTS.PITCH_MIN &&
-        currentPitch <= SENSOR_DEFAULTS.PITCH_MAX
+        currentPitch >= 35 &&
+        currentPitch <= 145
       ) {
         triggerShoot('motion');
       }
@@ -177,13 +180,13 @@ export function useMotionShot({
   return {
     permissionState,
     sensorsSupported,
+    isSecureContext,
     sensorValues,
     sensitivity,
     setSensitivity,
     isTapMode,
     setIsTapMode,
     requestPermission,
-    triggerShoot, // can be called by tap/click
+    triggerShoot,
   };
 }
-

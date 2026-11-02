@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Smartphone, MousePointer, CheckCircle2, ShieldCheck, Flame, Sliders, AlertTriangle } from 'lucide-react';
+import { Smartphone, MousePointer, CheckCircle2, ShieldAlert, Sliders, AlertCircle, Info } from 'lucide-react';
 import CalaveraAvatar from '../components/CalaveraAvatar';
 import PapelPicado from '../components/PapelPicado';
 
@@ -20,7 +20,7 @@ export default function LobbyScreen({
 
   const {
     permissionState,
-    sensorsSupported,
+    isSecureContext,
     sensorValues,
     sensitivity,
     setSensitivity,
@@ -29,7 +29,7 @@ export default function LobbyScreen({
     requestPermission,
   } = motionShot;
 
-  const bothReady = player.ready && opponent?.ready;
+  const bothReady = player?.ready && opponent?.ready;
 
   const handleReadyClick = () => {
     sound.playHammerCock();
@@ -57,7 +57,7 @@ export default function LobbyScreen({
         </span>
         <div className="flex items-center space-x-1.5 text-[11px] font-mono text-desert-sand/70">
           <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-          <span>{clockSync?.synced ? `PING: ${clockSync.rtt}ms` : 'SYNCING...'}</span>
+          <span>{clockSync?.synced ? `SYNCED (${clockSync.rtt}ms)` : 'STANDOFF READY'}</span>
         </div>
       </div>
 
@@ -74,25 +74,25 @@ export default function LobbyScreen({
             <div className="flex-1 flex flex-col items-center">
               <div className="relative">
                 <CalaveraAvatar
-                  avatar={player.avatar}
+                  avatar={player?.avatar}
                   size="lg"
-                  isReady={player.ready}
+                  isReady={player?.ready}
                 />
               </div>
               <span className="text-sm font-rye text-amber-300 mt-2 truncate max-w-[110px]">
-                {player.name}
+                {player?.name}
               </span>
               <span className="text-[10px] font-mono uppercase tracking-wider text-desert-sand/60">
-                (YOU {player.isHost ? '• HOST' : ''})
+                (YOU {player?.isHost ? '• HOST' : ''})
               </span>
               <span
                 className={`mt-1.5 px-2 py-0.5 rounded text-[10px] font-mono uppercase font-bold tracking-wider ${
-                  player.ready
+                  player?.ready
                     ? 'bg-green-950 text-green-300 border border-green-600'
                     : 'bg-stone-900 text-stone-400 border border-stone-700'
                 }`}
               >
-                {player.ready ? 'LISTO ✓' : 'NOT READY'}
+                {player?.ready ? 'LISTO ✓' : 'NOT READY'}
               </span>
             </div>
 
@@ -142,7 +142,7 @@ export default function LobbyScreen({
           </div>
         </div>
 
-        {/* Motion Sensor Diagnostics & Permission Button */}
+        {/* Motion Sensor / Tap Mode Panel */}
         <div className="w-full mt-3 bg-stone-900/80 border border-amber-900/60 rounded-lg p-3 text-left">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
@@ -152,7 +152,7 @@ export default function LobbyScreen({
                 <Smartphone size={16} className="text-amber-400" />
               )}
               <span className="text-xs font-mono font-bold text-amber-300">
-                {isTapMode ? 'TAP / SPACE TO SHOOT' : 'POCKET MOTION SENSORS'}
+                {isTapMode ? 'INPUT: TAP SCREEN TO SHOOT' : 'INPUT: PULL FROM POCKET MOTION'}
               </span>
             </div>
 
@@ -165,15 +165,25 @@ export default function LobbyScreen({
             </button>
           </div>
 
-          {/* iOS permission required banner */}
-          {permissionState === 'prompt' && !isTapMode && (
+          {/* Insecure HTTP Notice */}
+          {!isSecureContext && (
+            <div className="mt-2.5 p-2 bg-amber-950/70 border border-amber-600/70 rounded text-[11px] font-mono text-amber-200 flex items-start space-x-1.5">
+              <Info size={14} className="mt-0.5 flex-shrink-0 text-amber-400" />
+              <span>
+                Browsers require HTTPS for phone motion sensors. Running on HTTP: <strong>Tap-to-Shoot mode is active</strong>.
+              </span>
+            </div>
+          )}
+
+          {/* iOS permission prompt button */}
+          {permissionState === 'prompt' && isSecureContext && (
             <div className="mt-2.5 p-2 bg-amber-950/70 border border-amber-500/80 rounded flex items-center justify-between">
               <span className="text-[11px] font-mono text-amber-200">
-                iOS requires permission for motion quick-draw:
+                iOS motion permission needed:
               </span>
               <button
                 onClick={handleEnableSensors}
-                className="ml-2 px-2.5 py-1 rounded bg-amber-500 text-stone-950 text-xs font-mono font-bold hover:bg-amber-400 active:scale-95"
+                className="ml-2 px-3 py-1.5 rounded bg-amber-500 text-stone-950 text-xs font-mono font-bold hover:bg-amber-400 active:scale-95 shadow"
               >
                 ENABLE SENSORS
               </button>
@@ -183,11 +193,11 @@ export default function LobbyScreen({
           {/* Real-time Diagnostics Display */}
           <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] font-mono">
             <div className="bg-stone-950/60 px-2 py-1 rounded border border-stone-800">
-              <span className="text-desert-sand/60">Pitch / Tilt: </span>
+              <span className="text-desert-sand/60">Pitch / Aim: </span>
               <span className={`font-bold ${
-                sensorValues.pitch >= 50 && sensorValues.pitch <= 130 ? 'text-green-400' : 'text-amber-300'
+                sensorValues.pitch >= 35 && sensorValues.pitch <= 145 ? 'text-green-400' : 'text-amber-300'
               }`}>
-                {sensorValues.pitch}° {sensorValues.pitch >= 50 && sensorValues.pitch <= 130 ? '(AIMED)' : ''}
+                {sensorValues.pitch}° {sensorValues.pitch >= 35 && sensorValues.pitch <= 145 ? '(AIMED)' : ''}
               </span>
             </div>
             <div className="bg-stone-950/60 px-2 py-1 rounded border border-stone-800">
@@ -196,7 +206,7 @@ export default function LobbyScreen({
             </div>
           </div>
 
-          {/* Expandable calibration slider & fallback toggle */}
+          {/* Settings Drawer */}
           {showSensorSettings && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
@@ -207,7 +217,7 @@ export default function LobbyScreen({
                 <span className="text-desert-sand/80">Input Method:</span>
                 <button
                   onClick={() => setIsTapMode(!isTapMode)}
-                  className="px-2 py-1 rounded bg-stone-800 text-amber-300 border border-stone-700 text-[11px]"
+                  className="px-2.5 py-1 rounded bg-stone-800 text-amber-300 border border-stone-700 text-[11px]"
                 >
                   Switch to {isTapMode ? 'Motion Sensor' : 'Tap Screen'}
                 </button>
@@ -222,7 +232,7 @@ export default function LobbyScreen({
                   <input
                     type="range"
                     min="8"
-                    max="22"
+                    max="20"
                     step="0.5"
                     value={sensitivity}
                     onChange={(e) => setSensitivity(parseFloat(e.target.value))}
@@ -230,7 +240,7 @@ export default function LobbyScreen({
                   />
                   <div className="flex justify-between text-[9px] text-stone-500">
                     <span>Sensitive (Light Flick)</span>
-                    <span>Stiff (Hard Pull)</span>
+                    <span>Stiff (Firm Pull)</span>
                   </div>
                 </div>
               )}
@@ -246,14 +256,14 @@ export default function LobbyScreen({
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={handleReadyClick}
-          className={`w-full py-3 px-4 rounded font-rye text-base tracking-wider border shadow-md flex items-center justify-center space-x-2 transition-all ${
-            player.ready
+          className={`w-full py-3.5 px-4 rounded font-rye text-base tracking-wider border shadow-md flex items-center justify-center space-x-2 transition-all cursor-pointer ${
+            player?.ready
               ? 'bg-stone-800 text-amber-400 border-amber-600/70'
               : 'bg-gradient-to-r from-amber-600 to-orange-600 text-desert-bone border-amber-400/50 shadow-[0_4px_14px_rgba(234,88,12,0.5)]'
           }`}
         >
           <CheckCircle2 size={18} />
-          <span>{player.ready ? 'UNREADY' : 'READY TO DRAW (LISTO)'}</span>
+          <span>{player?.ready ? 'UNREADY (CAMBIAR)' : 'READY TO DRAW (LISTO)'}</span>
         </motion.button>
 
         {/* Start Match Button (Host Only, active when both ready) */}
@@ -269,12 +279,11 @@ export default function LobbyScreen({
                 : 'bg-stone-900/60 text-stone-500 border-stone-800 cursor-not-allowed'
             }`}
           >
-            <Flame size={20} className={bothReady ? 'text-amber-200 animate-bounce' : 'text-stone-600'} />
-            <span>START DUEL MATCH</span>
+            <span>{bothReady ? '🔥 START DUEL MATCH' : 'WAITING FOR BOTH TO BE READY'}</span>
           </motion.button>
         ) : (
           <div className="text-xs font-mono text-amber-400/80 py-2">
-            {bothReady ? 'Awaiting Host to fire starting shot...' : 'Waiting for both gunslingers to get ready...'}
+            {bothReady ? 'Both ready! Awaiting Host starting shot...' : 'Waiting for both gunslingers to click LISTO...'}
           </div>
         )}
 
@@ -289,4 +298,3 @@ export default function LobbyScreen({
     </div>
   );
 }
-

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Volume2, VolumeX, Smartphone, MousePointer, Sparkles, Flame } from 'lucide-react';
+import { Volume2, VolumeX, Smartphone, Target, Flame } from 'lucide-react';
 import { AVATARS } from '../game/avatars';
 import CalaveraAvatar from '../components/CalaveraAvatar';
 import PapelPicado from '../components/PapelPicado';
@@ -10,6 +10,8 @@ export default function HomeScreen({
   onUpdatePlayer,
   onCreateRoom,
   onJoinRoomClick,
+  onPracticeClick,
+  motionShot,
   sound,
   tequilaMode,
   onToggleTequila,
@@ -35,7 +37,7 @@ export default function HomeScreen({
   };
 
   return (
-    <div className="relative w-full h-full flex flex-col justify-between items-center px-4 py-6 max-w-md mx-auto text-center z-10">
+    <div className="relative w-full h-full flex flex-col justify-between items-center px-4 py-5 max-w-md mx-auto text-center z-10 overflow-y-auto">
       {/* Top Banner & Sound Toggle */}
       <div className="w-full flex flex-col items-center">
         <PapelPicado className="mb-2" />
@@ -69,7 +71,7 @@ export default function HomeScreen({
       </div>
 
       {/* Main Title Hero */}
-      <div className="flex flex-col items-center my-auto">
+      <div className="flex flex-col items-center my-auto py-2">
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -90,7 +92,7 @@ export default function HomeScreen({
         </motion.div>
 
         {/* Player Name Card */}
-        <div className="w-full max-w-xs mt-3 bg-stone-950/80 p-3 rounded-lg border-2 border-amber-900/80 shadow-2xl backdrop-blur-sm">
+        <div className="w-full max-w-xs mt-2 bg-stone-950/80 p-3 rounded-lg border-2 border-amber-900/80 shadow-2xl backdrop-blur-sm">
           <label className="block text-[11px] font-mono uppercase tracking-wider text-amber-400/90 text-left mb-1">
             Gunslinger Name
           </label>
@@ -101,12 +103,12 @@ export default function HomeScreen({
             onChange={(e) => setName(e.target.value)}
             onBlur={handleNameBlur}
             placeholder="El Tirador"
-            className="w-full bg-stone-900 border border-amber-700/60 rounded px-3 py-2 text-desert-sand font-rye tracking-wide focus:outline-none focus:border-amber-400 text-center text-lg"
+            className="w-full bg-stone-900 border border-amber-700/60 rounded px-3 py-1.5 text-desert-sand font-rye tracking-wide focus:outline-none focus:border-amber-400 text-center text-base"
           />
 
           {/* Calavera Avatar Picker */}
-          <div className="mt-3">
-            <span className="block text-[10px] font-mono uppercase tracking-wider text-desert-sand/70 mb-2">
+          <div className="mt-2.5">
+            <span className="block text-[10px] font-mono uppercase tracking-wider text-desert-sand/70 mb-1.5">
               Choose Your Calavera
             </span>
             <div className="flex justify-center space-x-2 overflow-x-auto py-1">
@@ -116,7 +118,7 @@ export default function HomeScreen({
                   <button
                     key={av.id}
                     onClick={() => handleAvatarSelect(av)}
-                    className={`p-1 rounded-full transition-transform ${
+                    className={`p-1 rounded-full transition-transform cursor-pointer ${
                       isSelected
                         ? 'scale-110 ring-2 ring-amber-400 ring-offset-2 ring-offset-stone-950'
                         : 'opacity-65 hover:opacity-100 hover:scale-105'
@@ -127,7 +129,7 @@ export default function HomeScreen({
                 );
               })}
             </div>
-            <div className="text-[11px] font-mono text-amber-300 mt-1 italic">
+            <div className="text-[11px] font-mono text-amber-300 mt-1 italic truncate max-w-[260px] mx-auto">
               "{player.avatar?.name}" — {player.avatar?.tagline}
             </div>
           </div>
@@ -135,7 +137,8 @@ export default function HomeScreen({
       </div>
 
       {/* Main Buttons */}
-      <div className="w-full max-w-xs flex flex-col space-y-3 pb-2">
+      <div className="w-full max-w-xs flex flex-col space-y-2.5 pb-2">
+        {/* Create Room Button */}
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
@@ -144,12 +147,13 @@ export default function HomeScreen({
             sound.playHammerCock();
             onCreateRoom();
           }}
-          className="w-full py-3.5 px-4 rounded bg-gradient-to-r from-amber-600 via-orange-600 to-red-700 text-desert-bone font-rye text-lg tracking-wider border border-amber-300/40 shadow-[0_6px_20px_rgba(194,65,12,0.6)] flex items-center justify-center space-x-2"
+          className="w-full py-3 px-4 rounded bg-gradient-to-r from-amber-600 via-orange-600 to-red-700 text-desert-bone font-rye text-base tracking-wider border border-amber-300/40 shadow-[0_4px_16px_rgba(194,65,12,0.6)] flex items-center justify-center space-x-2 cursor-pointer"
         >
-          <Flame size={20} className="text-amber-200" />
-          <span>CREATE ROOM</span>
+          <Flame size={18} className="text-amber-200" />
+          <span>CREATE MULTIPLAYER ROOM</span>
         </motion.button>
 
+        {/* Join Duel Button */}
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
@@ -158,18 +162,32 @@ export default function HomeScreen({
             sound.playHammerCock();
             onJoinRoomClick();
           }}
-          className="w-full py-3 px-4 rounded bg-stone-900/90 hover:bg-stone-800 text-amber-400 font-rye text-base tracking-wider border border-amber-700/80 shadow-lg flex items-center justify-center space-x-2"
+          className="w-full py-2.5 px-4 rounded bg-stone-900/90 hover:bg-stone-800 text-amber-400 font-rye text-sm tracking-wider border border-amber-700/80 shadow-md flex items-center justify-center space-x-2 cursor-pointer"
         >
-          <span>JOIN DUEL</span>
+          <span>JOIN RIVAL ROOM</span>
         </motion.button>
 
-        {/* Input Mode Indicator */}
-        <div className="flex items-center justify-center space-x-2 text-[11px] font-mono text-desert-sand/70 pt-1">
+        {/* Solo Practice Mode Button */}
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => {
+            sound.initAudio();
+            sound.playHammerCock();
+            onPracticeClick();
+          }}
+          className="w-full py-2.5 px-4 rounded bg-stone-950 text-amber-300/90 hover:text-amber-200 font-mono text-xs tracking-wider border border-amber-900/60 flex items-center justify-center space-x-1.5 shadow"
+        >
+          <Target size={14} className="text-amber-500" />
+          <span>PRACTICE STANDOFF (SOLO VS BOT)</span>
+        </motion.button>
+
+        {/* Motion Sensor / Tap Mode Status */}
+        <div className="flex items-center justify-center space-x-1 text-[11px] font-mono text-desert-sand/70 pt-0.5">
           <Smartphone size={13} className="text-amber-400" />
-          <span>Pocket Draw Motion or Tap to Shoot</span>
+          <span>Tap anywhere to shoot (or pull phone from pocket)</span>
         </div>
       </div>
     </div>
   );
 }
-

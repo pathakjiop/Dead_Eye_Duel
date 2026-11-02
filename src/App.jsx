@@ -6,6 +6,7 @@ import {
   MESSAGE_TYPES,
   GAME_RULES,
 } from './game/constants';
+import { AVATARS } from './game/avatars';
 import { useSound } from './hooks/useSound';
 import { usePeer, generateRoomCode } from './hooks/usePeer';
 import { useMotionShot } from './hooks/useMotionShot';
@@ -26,6 +27,7 @@ export default function App() {
 
   const holsterTimerRef = useRef(null);
   const waitTimerRef = useRef(null);
+  const botTimerRef = useRef(null);
   const slowDrawTimerRef = useRef(null);
   const localDrawTimeRef = useRef(null);
   const falseStartOccurredRef = useRef(false);
@@ -71,7 +73,6 @@ export default function App() {
         note = `${state.opponent?.name || 'Rival'} drew faster by ${diff}ms!`;
       }
     } else if (forceResolve) {
-      // Timeout: one player fired while the other didn't draw in time
       if (pShot && !oShot) {
         winner = 'player';
         note = `${state.player.name} shot while rival was caught sleeping!`;
@@ -83,7 +84,6 @@ export default function App() {
         note = 'Neither gunslinger took a shot!';
       }
     } else {
-      // One has shot; give the other up to 2.5 seconds before auto-resolving
       if (!slowDrawTimerRef.current) {
         slowDrawTimerRef.current = setTimeout(() => {
           evaluateRoundHost(true);
@@ -105,16 +105,17 @@ export default function App() {
       opponentReaction: oShot?.reactionMs,
     };
 
-    // Update Host state (points incremented in reducer)
     dispatch({ type: 'FINALIZE_ROUND_RESULT', payload: resultPayload });
 
-    // Broadcast result to Guest (swapping perspective)
-    peer.sendMessage(MESSAGE_TYPES.ROUND_RESULT, {
-      winner: winner === 'player' ? 'opponent' : winner === 'opponent' ? 'player' : 'draw',
-      note,
-      playerReaction: oShot?.reactionMs,
-      opponentReaction: pShot?.reactionMs,
-    });
+    // Send result to Guest if not a bot
+    if (!state.opponent?.isBot) {
+      peer.sendMessage(MESSAGE_TYPES.ROUND_RESULT, {
+        winner: winner === 'player' ? 'opponent' : winner === 'opponent' ? 'player' : 'draw',
+        note,
+        playerReaction: oShot?.reactionMs,
+        opponentReaction: pShot?.reactionMs,
+      });
+    }
 
     const randomHole = {
       id: Date.now(),
@@ -125,24 +126,11 @@ export default function App() {
     dispatch({ type: 'ADD_BULLET_HOLE', payload: randomHole });
   }, [state.player.name, state.opponent]);
 
-  // --- PEER MESSAGE HANDLER ---
+  // Peer Message Handler
   const handlePeerMessage = useCallback((msg) => {
     if (!msg || !msg.type) return;
 
     switch (msg.type) {
-      case MESSAGE_TYPES.HELLO: {
-        dispatch({ type: 'SET_OPPONENT', payload: msg.payload });
-        sound.playHammerCock();
-        peer.sendMessage(MESSAGE_TYPES.HELLO_ACK, state.player);
-        break;
-      }
-
-      case MESSAGE_TYPES.HELLO_ACK: {
-        dispatch({ type: 'SET_OPPONENT', payload: msg.payload });
-        sound.playHammerCock();
-        break;
-      }
-
       case MESSAGE_TYPES.READY: {
         dispatch({ type: 'UPDATE_OPPONENT_READY', payload: msg.payload.ready });
         sound.playHammerCock();
@@ -161,7 +149,7 @@ export default function App() {
       }
 
       case MESSAGE_TYPES.SHOT: {
-        const oppShot = msg.payload; // { reactionMs, shotTime }
+        const oppShot = msg.payload;
         opponentShotRef.current = oppShot;
         dispatch({ type: 'REGISTER_OPPONENT_SHOT', payload: oppShot });
 
@@ -184,7 +172,6 @@ export default function App() {
       }
 
       case MESSAGE_TYPES.ROUND_RESULT: {
-        // Non-host applies official result sent by host
         dispatch({ type: 'FINALIZE_ROUND_RESULT', payload: msg.payload });
 
         const randomHole = {
@@ -217,25 +204,18 @@ export default function App() {
       default:
         break;
     }
-  }, [state.player, sound, evaluateRoundHost]);
+  }, [sound, evaluateRoundHost, state.player.isHost]);
 
-  // Peer Connection status change
-  const handleConnectionChange = useCallback(({ status, isHost }) => {
-    if (status === 'connected') {
-      dispatch({ type: 'PEER_CONNECTED' });
-      if (!isHost) {
-        setTimeout(() => {
-          peer.sendMessage(MESSAGE_TYPES.HELLO, state.player);
-        }, 300);
-      }
-    } else if (status === 'disconnected') {
-      dispatch({ type: 'CONNECTION_ERROR', payload: 'Peer disconnected' });
-    }
-  }, [state.player]);
+  // Automated Handshake callback: switches to Lobby reliably
+  const handleOpponentConnected = useCallback((oppProfile) => {
+    dispatch({ type: 'SET_OPPONENT', payload: oppProfile });
+    sound.playHammerCock();
+  }, [sound]);
 
   const peer = usePeer({
+    playerProfile: state.player,
+    onOpponentConnected: handleOpponentConnected,
     onMessage: handlePeerMessage,
-    onConnectionChange: handleConnectionChange,
   });
 
   // Handle local shot from motion or tap
@@ -252,7 +232,9 @@ export default function App() {
       sound.playGunshot();
       sound.playFalseStart();
 
-      peer.sendMessage(MESSAGE_TYPES.FALSE_START, { source });
+      if (!state.opponent?.isBot) {
+        peer.sendMessage(MESSAGE_TYPES.FALSE_START, { source });
+      }
 
       if (state.player.isHost) {
         evaluateRoundHost(false);
@@ -270,13 +252,15 @@ export default function App() {
       dispatch({ type: 'REGISTER_PLAYER_SHOT', payload: validShot });
       sound.playGunshot();
 
-      peer.sendMessage(MESSAGE_TYPES.SHOT, validShot);
+      if (!state.opponent?.isBot) {
+        peer.sendMessage(MESSAGE_TYPES.SHOT, validShot);
+      }
 
       if (state.player.isHost) {
         evaluateRoundHost(false);
       }
     }
-  }, [state.duel.phase, state.player.isHost, sound, peer, evaluateRoundHost]);
+  }, [state.duel.phase, state.opponent, state.player.isHost, sound, peer, evaluateRoundHost]);
 
   // Motion shot hook
   const motionShot = useMotionShot({
@@ -288,6 +272,7 @@ export default function App() {
   const startRoundSequence = useCallback((hostDrawAt, holsterDuration = 3000) => {
     if (holsterTimerRef.current) clearInterval(holsterTimerRef.current);
     if (waitTimerRef.current) clearTimeout(waitTimerRef.current);
+    if (botTimerRef.current) clearTimeout(botTimerRef.current);
     if (slowDrawTimerRef.current) clearTimeout(slowDrawTimerRef.current);
 
     falseStartOccurredRef.current = false;
@@ -320,6 +305,30 @@ export default function App() {
         const nowWallClock = Date.now();
         const waitDelayRemaining = Math.max(200, localEstimatedDrawAt - nowWallClock);
 
+        // Schedule Bot shot if in practice mode
+        if (state.opponent?.isBot) {
+          const isBotEarly = Math.random() < 0.04;
+          if (isBotEarly) {
+            // Bot false start during WAIT
+            botTimerRef.current = setTimeout(() => {
+              const oppShot = { falseStart: true, reactionMs: null };
+              opponentShotRef.current = oppShot;
+              dispatch({ type: 'REGISTER_OPPONENT_SHOT', payload: oppShot });
+              sound.playFalseStart();
+              evaluateRoundHost(false);
+            }, waitDelayRemaining * 0.6);
+          } else {
+            // Bot shoots after DRAW with human-like reaction time
+            const botReaction = Math.floor(Math.random() * 220) + 340; // 340ms - 560ms
+            botTimerRef.current = setTimeout(() => {
+              const oppShot = { reactionMs: botReaction, falseStart: false };
+              opponentShotRef.current = oppShot;
+              dispatch({ type: 'REGISTER_OPPONENT_SHOT', payload: oppShot });
+              evaluateRoundHost(false);
+            }, waitDelayRemaining + botReaction);
+          }
+        }
+
         waitTimerRef.current = setTimeout(() => {
           if (!falseStartOccurredRef.current) {
             localDrawTimeRef.current = performance.now();
@@ -331,7 +340,7 @@ export default function App() {
         }, waitDelayRemaining);
       }
     }, 1000);
-  }, [state.clockSync.offset]);
+  }, [state.clockSync.offset, state.opponent, sound, evaluateRoundHost]);
 
   // Host starts duel round
   const hostInitiateRound = useCallback(() => {
@@ -343,20 +352,23 @@ export default function App() {
     const hostNow = Date.now();
     const hostDrawAt = hostNow + holsterDuration + waitDelay;
 
-    peer.sendMessage(MESSAGE_TYPES.ROUND_START, {
-      hostDrawAt,
-      holsterDuration,
-      waitDelay,
-    });
+    if (!state.opponent?.isBot) {
+      peer.sendMessage(MESSAGE_TYPES.ROUND_START, {
+        hostDrawAt,
+        holsterDuration,
+        waitDelay,
+      });
+    }
 
     startRoundSequence(hostDrawAt, holsterDuration);
-  }, [peer, startRoundSequence]);
+  }, [peer, state.opponent, startRoundSequence]);
 
   // Clean up timers on unmount
   useEffect(() => {
     return () => {
       if (holsterTimerRef.current) clearInterval(holsterTimerRef.current);
       if (waitTimerRef.current) clearTimeout(waitTimerRef.current);
+      if (botTimerRef.current) clearTimeout(botTimerRef.current);
       if (slowDrawTimerRef.current) clearTimeout(slowDrawTimerRef.current);
     };
   }, []);
@@ -386,14 +398,36 @@ export default function App() {
     peer.joinRoom(targetCode);
   };
 
+  const handleStartPracticeMode = () => {
+    const botAvatar = AVATARS[2]; // El Bandido
+    const botOpponent = {
+      id: 'bot',
+      name: 'El Bot Bandido',
+      avatar: botAvatar,
+      ready: true,
+      isBot: true,
+    };
+    dispatch({
+      type: 'INIT_ROOM_AS_HOST',
+      payload: { code: 'PRACTICE', peerId: 'local-practice' },
+    });
+    dispatch({ type: 'SET_OPPONENT', payload: botOpponent });
+    dispatch({ type: 'SET_PLAYER_READY', payload: true });
+    sound.playHammerCock();
+  };
+
   const handleToggleReady = (readyVal) => {
     dispatch({ type: 'SET_PLAYER_READY', payload: readyVal });
-    peer.sendMessage(MESSAGE_TYPES.READY, { ready: readyVal });
+    if (!state.opponent?.isBot) {
+      peer.sendMessage(MESSAGE_TYPES.READY, { ready: readyVal });
+    }
   };
 
   const handleRematch = () => {
     dispatch({ type: 'RESTART_MATCH' });
-    peer.sendMessage(MESSAGE_TYPES.REMATCH);
+    if (!state.opponent?.isBot) {
+      peer.sendMessage(MESSAGE_TYPES.REMATCH);
+    }
   };
 
   const handleLeaveRoom = () => {
@@ -417,6 +451,8 @@ export default function App() {
             onUpdatePlayer={(p) => dispatch({ type: 'UPDATE_PLAYER_PROFILE', payload: p })}
             onCreateRoom={handleCreateRoom}
             onJoinRoomClick={() => dispatch({ type: 'SET_SCREEN', payload: SCREENS.JOIN })}
+            onPracticeClick={handleStartPracticeMode}
+            motionShot={motionShot}
             sound={sound}
             tequilaMode={state.tequilaMode}
             onToggleTequila={() => dispatch({ type: 'TOGGLE_TEQUILA_MODE' })}
@@ -471,7 +507,9 @@ export default function App() {
             onNextRound={() => {
               if (state.match.playerScore >= 2 || state.match.opponentScore >= 2) {
                 dispatch({ type: 'NEXT_ROUND_OR_FINISH' });
-                peer.sendMessage('GOTO_MATCH_END');
+                if (!state.opponent?.isBot) {
+                  peer.sendMessage('GOTO_MATCH_END');
+                }
               } else {
                 dispatch({ type: 'NEXT_ROUND_OR_FINISH' });
                 if (state.player.isHost) {

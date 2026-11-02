@@ -5,21 +5,46 @@ import { MESSAGE_TYPES, PEER_PREFIX, GAME_RULES } from '../game/constants';
 // Clean constructor resolution for PeerJS across ESM, Vite, and CJS
 const Peer = PeerModule.Peer || PeerModule.default?.Peer || PeerModule.default || PeerModule;
 
-const ROOM_CHARS = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+const ROOM_CHARS = '23456789abcdefghjkmnpqrstuvwxyz';
 
 export function generateRoomCode() {
   let code = '';
   for (let i = 0; i < 4; i++) {
     code += ROOM_CHARS.charAt(Math.floor(Math.random() * ROOM_CHARS.length));
   }
-  return code;
+  return code.toUpperCase();
 }
 
+// Always lowercase for PeerJS ID to avoid case mismatch on public broker
 export function formatPeerId(code) {
-  return `${PEER_PREFIX}${String(code || '').trim().toUpperCase()}`;
+  return `${PEER_PREFIX}${String(code || '').trim().toLowerCase()}`;
 }
 
-export function usePeer({ onMessage, onConnectionChange }) {
+// Global STUN + Free OpenRelay TURN servers for cross-network (cellular vs Wi-Fi) traversal
+const ICE_SERVERS = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:stun2.l.google.com:19302' },
+  { urls: 'stun:stun3.l.google.com:19302' },
+  { urls: 'stun:global.stun.twilio.com:3478' },
+  // OpenRelay Public Free TURN Servers (Metered)
+  {
+    urls: [
+      'turn:openrelay.metered.ca:80',
+      'turn:openrelay.metered.ca:443',
+      'turn:openrelay.metered.ca:443?transport=tcp',
+    ],
+    username: 'openrelay',
+    credential: 'openrelay',
+  },
+];
+
+export function usePeer({
+  playerProfile,
+  onOpponentConnected,
+  onMessage,
+  onConnectionChange,
+}) {
   const [peerId, setPeerId] = useState('');
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -28,10 +53,21 @@ export function usePeer({ onMessage, onConnectionChange }) {
   const peerRef = useRef(null);
   const connRef = useRef(null);
   const pingSamplesRef = useRef([]);
+  const handshakeIntervalRef = useRef(null);
 
-  // Store latest callbacks in refs to eliminate stale closure bugs
+  // Store latest callbacks and profile in refs to eliminate stale closure bugs
+  const playerProfileRef = useRef(playerProfile);
+  const onOpponentConnectedRef = useRef(onOpponentConnected);
   const onMessageRef = useRef(onMessage);
   const onConnectionChangeRef = useRef(onConnectionChange);
+
+  useEffect(() => {
+    playerProfileRef.current = playerProfile;
+  }, [playerProfile]);
+
+  useEffect(() => {
+    onOpponentConnectedRef.current = onOpponentConnected;
+  }, [onOpponentConnected]);
 
   useEffect(() => {
     onMessageRef.current = onMessage;
@@ -43,6 +79,10 @@ export function usePeer({ onMessage, onConnectionChange }) {
 
   // Destroy connection safely
   const disconnect = useCallback(() => {
+    if (handshakeIntervalRef.current) {
+      clearInterval(handshakeIntervalRef.current);
+      handshakeIntervalRef.current = null;
+    }
     if (connRef.current) {
       try {
         connRef.current.send({ type: MESSAGE_TYPES.LEAVE });
@@ -105,7 +145,7 @@ export function usePeer({ onMessage, onConnectionChange }) {
     sendPing();
   }, [sendMessage]);
 
-  // Setup data connection handlers
+  // Setup data connection handlers with automated handshake
   const setupConnection = useCallback(
     (conn, isHost) => {
       connRef.current = conn;
@@ -114,10 +154,27 @@ export function usePeer({ onMessage, onConnectionChange }) {
         setIsConnected(true);
         setIsConnecting(false);
         setPeerError(null);
+
         if (onConnectionChangeRef.current) {
           onConnectionChangeRef.current({ status: 'connected', isHost });
         }
-        if (isHost) {
+
+        // Automated Handshake: Guest sends HELLO immediately and retries until ACK
+        if (!isHost) {
+          const sendHello = () => {
+            if (conn && conn.open) {
+              conn.send({
+                type: 'HANDSHAKE_HELLO',
+                payload: playerProfileRef.current,
+                timestamp: Date.now(),
+              });
+            }
+          };
+
+          sendHello();
+          // Retry every 800ms until handshake completed
+          handshakeIntervalRef.current = setInterval(sendHello, 800);
+        } else {
           setTimeout(runClockSync, 400);
         }
       });
@@ -125,6 +182,35 @@ export function usePeer({ onMessage, onConnectionChange }) {
       conn.on('data', (data) => {
         if (!data || !data.type) return;
 
+        // Automated Handshake Handling
+        if (data.type === 'HANDSHAKE_HELLO') {
+          // Host receives Guest profile -> reply with ACK
+          if (conn && conn.open) {
+            conn.send({
+              type: 'HANDSHAKE_ACK',
+              payload: playerProfileRef.current,
+              timestamp: Date.now(),
+            });
+          }
+          if (onOpponentConnectedRef.current) {
+            onOpponentConnectedRef.current(data.payload);
+          }
+          return;
+        }
+
+        if (data.type === 'HANDSHAKE_ACK') {
+          // Guest receives Host profile -> Handshake completed!
+          if (handshakeIntervalRef.current) {
+            clearInterval(handshakeIntervalRef.current);
+            handshakeIntervalRef.current = null;
+          }
+          if (onOpponentConnectedRef.current) {
+            onOpponentConnectedRef.current(data.payload);
+          }
+          return;
+        }
+
+        // Ping-Pong handling
         if (data.type === MESSAGE_TYPES.PING) {
           conn.send({
             type: MESSAGE_TYPES.PONG,
@@ -142,13 +228,17 @@ export function usePeer({ onMessage, onConnectionChange }) {
           return;
         }
 
-        // Always invoke the freshest onMessage callback
+        // Pass message up to game reducer
         if (onMessageRef.current) {
           onMessageRef.current(data);
         }
       });
 
       conn.on('close', () => {
+        if (handshakeIntervalRef.current) {
+          clearInterval(handshakeIntervalRef.current);
+          handshakeIntervalRef.current = null;
+        }
         setIsConnected(false);
         connRef.current = null;
         if (onConnectionChangeRef.current) {
@@ -178,10 +268,7 @@ export function usePeer({ onMessage, onConnectionChange }) {
         const peer = new PeerClass(targetPeerId, {
           debug: 1,
           config: {
-            iceServers: [
-              { urls: 'stun:stun.l.google.com:19302' },
-              { urls: 'stun:global.stun.twilio.com:3478' },
-            ],
+            iceServers: ICE_SERVERS,
           },
         });
 
@@ -228,10 +315,7 @@ export function usePeer({ onMessage, onConnectionChange }) {
         const peer = new PeerClass({
           debug: 1,
           config: {
-            iceServers: [
-              { urls: 'stun:stun.l.google.com:19302' },
-              { urls: 'stun:global.stun.twilio.com:3478' },
-            ],
+            iceServers: ICE_SERVERS,
           },
         });
 
@@ -250,7 +334,7 @@ export function usePeer({ onMessage, onConnectionChange }) {
           setIsConnecting(false);
           setPeerError(
             err.type === 'peer-unavailable'
-              ? 'Room not found! Verify the 4-letter code.'
+              ? 'Room not found! Verify host is waiting.'
               : err.message || 'Could not connect to rival'
           );
         });
