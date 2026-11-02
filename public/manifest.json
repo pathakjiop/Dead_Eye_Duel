@@ -1,0 +1,17 @@
+{
+  "short_name": "Dead Eye Duel",
+  "name": "DEAD EYE DUEL - Quick-Draw Duel",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#140c08",
+  "theme_color": "#c2410c",
+  "display": "standalone",
+  "orientation": "portrait"
+}
+
