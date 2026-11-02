@@ -5,14 +5,14 @@ import { MESSAGE_TYPES, PEER_PREFIX, GAME_RULES } from '../game/constants';
 // Clean constructor resolution for PeerJS across ESM, Vite, and CJS
 const Peer = PeerModule.Peer || PeerModule.default?.Peer || PeerModule.default || PeerModule;
 
-const ROOM_CHARS = '23456789abcdefghjkmnpqrstuvwxyz';
+const ROOM_CHARS = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
 
 export function generateRoomCode() {
   let code = '';
   for (let i = 0; i < 4; i++) {
     code += ROOM_CHARS.charAt(Math.floor(Math.random() * ROOM_CHARS.length));
   }
-  return code.toUpperCase();
+  return code;
 }
 
 // Always lowercase for PeerJS ID to avoid case mismatch on public broker
@@ -20,20 +20,11 @@ export function formatPeerId(code) {
   return `${PEER_PREFIX}${String(code || '').trim().toLowerCase()}`;
 }
 
-// Global STUN + Free OpenRelay TURN servers for cross-network (cellular vs Wi-Fi) traversal
+// Streamlined 2 ICE servers (1 fast Google STUN + 1 OpenRelay TURN) to avoid discovery slowdown
 const ICE_SERVERS = [
   { urls: 'stun:stun.l.google.com:19302' },
-  { urls: 'stun:stun1.l.google.com:19302' },
-  { urls: 'stun:stun2.l.google.com:19302' },
-  { urls: 'stun:stun3.l.google.com:19302' },
-  { urls: 'stun:global.stun.twilio.com:3478' },
-  // OpenRelay Public Free TURN Servers (Metered)
   {
-    urls: [
-      'turn:openrelay.metered.ca:80',
-      'turn:openrelay.metered.ca:443',
-      'turn:openrelay.metered.ca:443?transport=tcp',
-    ],
+    urls: 'turn:openrelay.metered.ca:80',
     username: 'openrelay',
     credential: 'openrelay',
   },
@@ -54,8 +45,9 @@ export function usePeer({
   const connRef = useRef(null);
   const pingSamplesRef = useRef([]);
   const handshakeIntervalRef = useRef(null);
+  const joinRetryTimerRef = useRef(null);
+  const joinAttemptsRef = useRef(0);
 
-  // Store latest callbacks and profile in refs to eliminate stale closure bugs
   const playerProfileRef = useRef(playerProfile);
   const onOpponentConnectedRef = useRef(onOpponentConnected);
   const onMessageRef = useRef(onMessage);
@@ -77,39 +69,57 @@ export function usePeer({
     onConnectionChangeRef.current = onConnectionChange;
   }, [onConnectionChange]);
 
-  // Destroy connection safely
-  const disconnect = useCallback(() => {
+  const clearHandshake = () => {
     if (handshakeIntervalRef.current) {
       clearInterval(handshakeIntervalRef.current);
       handshakeIntervalRef.current = null;
     }
+  };
+
+  const clearRetry = () => {
+    if (joinRetryTimerRef.current) {
+      clearTimeout(joinRetryTimerRef.current);
+      joinRetryTimerRef.current = null;
+    }
+    joinAttemptsRef.current = 0;
+  };
+
+  // Safe disconnect
+  const disconnect = useCallback(() => {
+    clearHandshake();
+    clearRetry();
+
     if (connRef.current) {
       try {
-        connRef.current.send({ type: MESSAGE_TYPES.LEAVE });
+        if (connRef.current.open && connRef.current.dataChannel?.readyState === 'open') {
+          connRef.current.send({ type: MESSAGE_TYPES.LEAVE });
+        }
         connRef.current.close();
       } catch {}
       connRef.current = null;
     }
+
     if (peerRef.current) {
       try {
         peerRef.current.destroy();
       } catch {}
       peerRef.current = null;
     }
+
     setIsConnected(false);
     setIsConnecting(false);
   }, []);
 
-  // Send message over WebRTC DataChannel
+  // Safe message sending (never throws "Connection is not open")
   const sendMessage = useCallback((type, payload = {}) => {
-    if (connRef.current && connRef.current.open) {
-      try {
-        connRef.current.send({ type, payload, timestamp: Date.now() });
+    try {
+      const conn = connRef.current;
+      if (conn && conn.open && conn.dataChannel && conn.dataChannel.readyState === 'open') {
+        conn.send({ type, payload, timestamp: Date.now() });
         return true;
-      } catch (err) {
-        console.error('Failed to send peer message:', err);
-        return false;
       }
+    } catch (err) {
+      console.warn('Failed to send peer message safely:', err);
     }
     return false;
   }, []);
@@ -145,12 +155,13 @@ export function usePeer({
     sendPing();
   }, [sendMessage]);
 
-  // Setup data connection handlers with automated handshake
+  // Setup connection handlers
   const setupConnection = useCallback(
     (conn, isHost) => {
       connRef.current = conn;
 
       conn.on('open', () => {
+        clearRetry();
         setIsConnected(true);
         setIsConnecting(false);
         setPeerError(null);
@@ -159,21 +170,27 @@ export function usePeer({
           onConnectionChangeRef.current({ status: 'connected', isHost });
         }
 
-        // Automated Handshake: Guest sends HELLO immediately and retries until ACK
+        // Automated Handshake: Guest sends HELLO and retries until ACK
         if (!isHost) {
+          clearHandshake();
+
           const sendHello = () => {
-            if (conn && conn.open) {
-              conn.send({
-                type: 'HANDSHAKE_HELLO',
-                payload: playerProfileRef.current,
-                timestamp: Date.now(),
-              });
+            try {
+              if (conn && conn.open && conn.dataChannel && conn.dataChannel.readyState === 'open') {
+                conn.send({
+                  type: 'HANDSHAKE_HELLO',
+                  payload: playerProfileRef.current,
+                  timestamp: Date.now(),
+                });
+              }
+            } catch (e) {
+              console.warn('sendHello error:', e);
             }
           };
 
-          sendHello();
-          // Retry every 800ms until handshake completed
-          handshakeIntervalRef.current = setInterval(sendHello, 800);
+          // Send first handshake after 100ms when dataChannel is fully ready
+          setTimeout(sendHello, 100);
+          handshakeIntervalRef.current = setInterval(sendHello, 1000);
         } else {
           setTimeout(runClockSync, 400);
         }
@@ -184,14 +201,15 @@ export function usePeer({
 
         // Automated Handshake Handling
         if (data.type === 'HANDSHAKE_HELLO') {
-          // Host receives Guest profile -> reply with ACK
-          if (conn && conn.open) {
-            conn.send({
-              type: 'HANDSHAKE_ACK',
-              payload: playerProfileRef.current,
-              timestamp: Date.now(),
-            });
-          }
+          try {
+            if (conn && conn.open && conn.dataChannel && conn.dataChannel.readyState === 'open') {
+              conn.send({
+                type: 'HANDSHAKE_ACK',
+                payload: playerProfileRef.current,
+                timestamp: Date.now(),
+              });
+            }
+          } catch {}
           if (onOpponentConnectedRef.current) {
             onOpponentConnectedRef.current(data.payload);
           }
@@ -199,11 +217,7 @@ export function usePeer({
         }
 
         if (data.type === 'HANDSHAKE_ACK') {
-          // Guest receives Host profile -> Handshake completed!
-          if (handshakeIntervalRef.current) {
-            clearInterval(handshakeIntervalRef.current);
-            handshakeIntervalRef.current = null;
-          }
+          clearHandshake();
           if (onOpponentConnectedRef.current) {
             onOpponentConnectedRef.current(data.payload);
           }
@@ -212,10 +226,14 @@ export function usePeer({
 
         // Ping-Pong handling
         if (data.type === MESSAGE_TYPES.PING) {
-          conn.send({
-            type: MESSAGE_TYPES.PONG,
-            payload: { t0: data.payload.t0, t1: Date.now() },
-          });
+          try {
+            if (conn && conn.open && conn.dataChannel?.readyState === 'open') {
+              conn.send({
+                type: MESSAGE_TYPES.PONG,
+                payload: { t0: data.payload.t0, t1: Date.now() },
+              });
+            }
+          } catch {}
           return;
         }
 
@@ -228,17 +246,14 @@ export function usePeer({
           return;
         }
 
-        // Pass message up to game reducer
+        // Forward message to reducer
         if (onMessageRef.current) {
           onMessageRef.current(data);
         }
       });
 
       conn.on('close', () => {
-        if (handshakeIntervalRef.current) {
-          clearInterval(handshakeIntervalRef.current);
-          handshakeIntervalRef.current = null;
-        }
+        clearHandshake();
         setIsConnected(false);
         connRef.current = null;
         if (onConnectionChangeRef.current) {
@@ -247,7 +262,8 @@ export function usePeer({
       });
 
       conn.on('error', (err) => {
-        console.error('Peer connection error:', err);
+        clearHandshake();
+        console.warn('Peer connection error:', err);
         setPeerError(err.message || 'Connection error');
       });
     },
@@ -283,8 +299,16 @@ export function usePeer({
           setupConnection(conn, true);
         });
 
+        // Mobile background tab keep-alive: auto-reconnect if signaling drops
+        peer.on('disconnected', () => {
+          console.log('Peer disconnected from signaling server, reconnecting...');
+          if (peer && !peer.destroyed) {
+            peer.reconnect();
+          }
+        });
+
         peer.on('error', (err) => {
-          console.error('PeerJS Host error:', err);
+          console.warn('PeerJS Host error:', err);
           setIsConnecting(false);
           setPeerError(
             err.type === 'unavailable-id'
@@ -301,7 +325,7 @@ export function usePeer({
     [disconnect, setupConnection]
   );
 
-  // Guest joins an existing room
+  // Guest joins an existing room with automatic retry
   const joinRoom = useCallback(
     (targetRoomCode) => {
       disconnect();
@@ -310,45 +334,69 @@ export function usePeer({
 
       const targetHostId = formatPeerId(targetRoomCode);
 
-      try {
-        const PeerClass = Peer;
-        const peer = new PeerClass({
-          debug: 1,
-          config: {
-            iceServers: ICE_SERVERS,
-          },
-        });
-
-        peerRef.current = peer;
-
-        peer.on('open', (id) => {
-          setPeerId(id);
-          const conn = peer.connect(targetHostId, {
-            reliable: true,
+      const attemptConnect = () => {
+        try {
+          const PeerClass = Peer;
+          const peer = new PeerClass({
+            debug: 1,
+            config: {
+              iceServers: ICE_SERVERS,
+            },
           });
-          setupConnection(conn, false);
-        });
 
-        peer.on('error', (err) => {
-          console.error('PeerJS Guest error:', err);
+          peerRef.current = peer;
+
+          peer.on('open', (id) => {
+            setPeerId(id);
+            const conn = peer.connect(targetHostId, {
+              reliable: true,
+            });
+            setupConnection(conn, false);
+          });
+
+          peer.on('error', (err) => {
+            console.warn('PeerJS Guest attempt error:', err);
+
+            // Auto-retry up to 3 times if host is still propagating on broker
+            if (err.type === 'peer-unavailable' && joinAttemptsRef.current < 3) {
+              joinAttemptsRef.current += 1;
+              setPeerError(`Connecting to rival... (attempt ${joinAttemptsRef.current}/3)`);
+              joinRetryTimerRef.current = setTimeout(attemptConnect, 1400);
+            } else {
+              setIsConnecting(false);
+              setPeerError(
+                err.type === 'peer-unavailable'
+                  ? 'Room not found! Verify host has room open.'
+                  : err.message || 'Could not connect to rival'
+              );
+            }
+          });
+        } catch (err) {
+          console.error('Failed to join Peer instance:', err);
           setIsConnecting(false);
-          setPeerError(
-            err.type === 'peer-unavailable'
-              ? 'Room not found! Verify host is waiting.'
-              : err.message || 'Could not connect to rival'
-          );
-        });
-      } catch (err) {
-        console.error('Failed to join Peer instance:', err);
-        setIsConnecting(false);
-        setPeerError('Failed to initialize WebRTC Peer');
-      }
+          setPeerError('Failed to initialize WebRTC Peer');
+        }
+      };
+
+      attemptConnect();
     },
     [disconnect, setupConnection]
   );
 
+  // Mobile visibility change: reconnect peer if disconnected while in background
   useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        if (peerRef.current && peerRef.current.disconnected && !peerRef.current.destroyed) {
+          console.log('Tab returned to foreground: reconnecting peer...');
+          peerRef.current.reconnect();
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibility);
     return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
       disconnect();
     };
   }, [disconnect]);
