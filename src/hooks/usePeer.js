@@ -344,6 +344,7 @@ export function usePeer({
         const PeerClass = Peer;
         const peer = new PeerClass(targetPeerId, {
           debug: 1,
+          pingInterval: 5000,
           config: {
             iceServers,
             sdpSemantics: 'unified-plan',
@@ -371,6 +372,13 @@ export function usePeer({
 
         peer.on('error', (err) => {
           console.warn('PeerJS Host error:', err);
+          if (err.message?.includes('Lost connection') || err.type === 'network' || err.type === 'server-error') {
+            if (peer && !peer.destroyed) {
+              try { peer.reconnect(); } catch {}
+            }
+            return;
+          }
+
           setIsConnecting(false);
           setPeerError(
             err.type === 'unavailable-id'
@@ -397,57 +405,81 @@ export function usePeer({
       const targetHostId = formatPeerId(targetRoomCode);
       const iceServers = await fetchIceServers();
 
-      const attemptConnect = () => {
-        try {
-          const PeerClass = Peer;
-          const peer = new PeerClass({
-            debug: 1,
-            config: {
-              iceServers,
-              sdpSemantics: 'unified-plan',
-            },
-          });
+      try {
+        const PeerClass = Peer;
+        const peer = new PeerClass(undefined, {
+          debug: 1,
+          pingInterval: 5000,
+          config: {
+            iceServers,
+            sdpSemantics: 'unified-plan',
+          },
+        });
 
-          peerRef.current = peer;
+        peerRef.current = peer;
 
-          peer.on('open', (id) => {
-            setPeerId(id);
-            // Native JSON serialization for reliable cross-platform packet delivery
+        const doConnect = () => {
+          if (!peer || peer.destroyed) return;
+          try {
             const conn = peer.connect(targetHostId, {
               serialization: 'json',
             });
             setupConnection(conn, false);
-          });
+          } catch (e) {
+            console.warn('doConnect error:', e);
+          }
+        };
 
-          peer.on('error', (err) => {
-            console.warn('PeerJS Guest attempt error:', err);
+        peer.on('open', (id) => {
+          setPeerId(id);
+          doConnect();
+        });
 
-            if (err.type === 'peer-unavailable' && joinAttemptsRef.current < 3) {
-              joinAttemptsRef.current += 1;
-              setPeerError(`Connecting to rival... (attempt ${joinAttemptsRef.current}/3)`);
-              joinRetryTimerRef.current = setTimeout(attemptConnect, 1400);
-            } else {
-              setIsConnecting(false);
-              const msg = String(err.message || '');
-              if (msg.includes('Negotiation') || msg.includes('ICE')) {
-                setPeerError('Cross-network firewall blocked connection. Try turning off VPN or use same Wi-Fi / Hotspot.');
-              } else {
-                setPeerError(
-                  err.type === 'peer-unavailable'
-                    ? 'Room not found! Verify host has room open.'
-                    : err.message || 'Could not connect to rival'
-                );
-              }
-            }
-          });
-        } catch (err) {
-          console.error('Failed to join Peer instance:', err);
+        peer.on('disconnected', () => {
+          console.log('Guest peer disconnected from signaling server, reconnecting...');
+          if (peer && !peer.destroyed) {
+            peer.reconnect();
+          }
+        });
+
+        peer.on('error', (err) => {
+          console.warn('PeerJS Guest attempt error:', err);
+
+          const isServerLoss =
+            err.message?.includes('Lost connection') ||
+            err.type === 'network' ||
+            err.type === 'server-error';
+          const isPeerUnavailable = err.type === 'peer-unavailable';
+
+          if (isServerLoss && peer && !peer.destroyed) {
+            try {
+              peer.reconnect();
+            } catch {}
+            return;
+          }
+
+          if (isPeerUnavailable && joinAttemptsRef.current < 4) {
+            joinAttemptsRef.current += 1;
+            setPeerError(`Calling rival... (attempt ${joinAttemptsRef.current}/4)`);
+            joinRetryTimerRef.current = setTimeout(doConnect, 1500);
+            return;
+          }
+
           setIsConnecting(false);
-          setPeerError('Failed to initialize WebRTC Peer');
-        }
-      };
-
-      attemptConnect();
+          const msg = String(err.message || '');
+          if (msg.includes('Negotiation') || msg.includes('ICE')) {
+            setPeerError('Cross-network firewall blocked connection. Try turning off VPN or use same Wi-Fi / Hotspot.');
+          } else if (isPeerUnavailable) {
+            setPeerError('Room not found! Verify host has room open.');
+          } else {
+            setPeerError(err.message || 'Could not connect to rival');
+          }
+        });
+      } catch (err) {
+        console.error('Failed to join Peer instance:', err);
+        setIsConnecting(false);
+        setPeerError('Failed to initialize WebRTC Peer');
+      }
     },
     [disconnect, setupConnection]
   );
