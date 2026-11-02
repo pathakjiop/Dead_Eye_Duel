@@ -20,14 +20,10 @@ export function formatPeerId(code) {
   return `${PEER_PREFIX}${String(code || '').trim().toLowerCase()}`;
 }
 
-// Streamlined 2 ICE servers (1 fast Google STUN + 1 OpenRelay TURN) to avoid discovery slowdown
+// Rock-solid Google STUN servers (zero broken TURN servers to avoid ICE failure)
 const ICE_SERVERS = [
   { urls: 'stun:stun.l.google.com:19302' },
-  {
-    urls: 'turn:openrelay.metered.ca:80',
-    username: 'openrelay',
-    credential: 'openrelay',
-  },
+  { urls: 'stun:stun1.l.google.com:19302' },
 ];
 
 export function usePeer({
@@ -110,7 +106,7 @@ export function usePeer({
     setIsConnecting(false);
   }, []);
 
-  // Safe message sending (never throws "Connection is not open")
+  // Safe message sending
   const sendMessage = useCallback((type, payload = {}) => {
     try {
       const conn = connRef.current;
@@ -188,8 +184,7 @@ export function usePeer({
             }
           };
 
-          // Send first handshake after 100ms when dataChannel is fully ready
-          setTimeout(sendHello, 100);
+          setTimeout(sendHello, 120);
           handshakeIntervalRef.current = setInterval(sendHello, 1000);
         } else {
           setTimeout(runClockSync, 400);
@@ -299,7 +294,6 @@ export function usePeer({
           setupConnection(conn, true);
         });
 
-        // Mobile background tab keep-alive: auto-reconnect if signaling drops
         peer.on('disconnected', () => {
           console.log('Peer disconnected from signaling server, reconnecting...');
           if (peer && !peer.destroyed) {
@@ -325,7 +319,7 @@ export function usePeer({
     [disconnect, setupConnection]
   );
 
-  // Guest joins an existing room with automatic retry
+  // Guest joins an existing room with native SCTP data channel (no deprecated reliable: true flag)
   const joinRoom = useCallback(
     (targetRoomCode) => {
       disconnect();
@@ -348,16 +342,14 @@ export function usePeer({
 
           peer.on('open', (id) => {
             setPeerId(id);
-            const conn = peer.connect(targetHostId, {
-              reliable: true,
-            });
+            // Native WebRTC data channel (ordered & reliable by default)
+            const conn = peer.connect(targetHostId);
             setupConnection(conn, false);
           });
 
           peer.on('error', (err) => {
             console.warn('PeerJS Guest attempt error:', err);
 
-            // Auto-retry up to 3 times if host is still propagating on broker
             if (err.type === 'peer-unavailable' && joinAttemptsRef.current < 3) {
               joinAttemptsRef.current += 1;
               setPeerError(`Connecting to rival... (attempt ${joinAttemptsRef.current}/3)`);
