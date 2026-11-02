@@ -42,7 +42,11 @@ export function useMotionShot({
 
       const hasMotion = 'DeviceMotionEvent' in window;
       const hasOrientation = 'DeviceOrientationEvent' in window;
-      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const isMobile =
+        /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+        (typeof navigator !== 'undefined' &&
+          navigator.maxTouchPoints > 1 &&
+          /Macintosh/i.test(navigator.userAgent));
 
       setSensorsSupported(hasMotion && hasOrientation);
 
@@ -95,6 +99,7 @@ export function useMotionShot({
       }
     } else {
       setPermissionState('granted');
+      setIsTapMode(false);
       return true;
     }
   }, []);

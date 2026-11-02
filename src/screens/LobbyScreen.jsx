@@ -142,53 +142,66 @@ export default function LobbyScreen({
           </div>
         </div>
 
-        {/* Motion Sensor / Tap Mode Panel */}
-        <div className="w-full mt-3 bg-stone-900/80 border border-amber-900/60 rounded-lg p-3 text-left">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              {isTapMode ? (
-                <MousePointer size={16} className="text-amber-400" />
-              ) : (
-                <Smartphone size={16} className="text-amber-400" />
-              )}
-              <span className="text-xs font-mono font-bold text-amber-300">
-                {isTapMode ? 'INPUT: TAP SCREEN TO SHOOT' : 'INPUT: PULL FROM POCKET MOTION'}
-              </span>
-            </div>
+          {/* Motion Sensor / Tap Mode Panel */}
+          <div className="w-full mt-3 bg-stone-900/80 border border-amber-900/60 rounded-lg p-3 text-left">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                {isTapMode ? (
+                  <MousePointer size={16} className="text-amber-400" />
+                ) : (
+                  <Smartphone size={16} className="text-green-400 animate-pulse" />
+                )}
+                <span className="text-xs font-mono font-bold text-amber-300">
+                  {isTapMode ? 'ACTIVE: TAP SCREEN TO SHOOT' : 'ACTIVE: POCKET DRAW SENSOR'}
+                </span>
+              </div>
 
-            <button
-              onClick={() => setShowSensorSettings(!showSensorSettings)}
-              className="p-1 rounded text-stone-400 hover:text-amber-300"
-              title="Calibration & Settings"
-            >
-              <Sliders size={16} />
-            </button>
-          </div>
-
-          {/* Insecure HTTP Notice */}
-          {!isSecureContext && (
-            <div className="mt-2.5 p-2 bg-amber-950/70 border border-amber-600/70 rounded text-[11px] font-mono text-amber-200 flex items-start space-x-1.5">
-              <Info size={14} className="mt-0.5 flex-shrink-0 text-amber-400" />
-              <span>
-                Browsers require HTTPS for phone motion sensors. Running on HTTP: <strong>Tap-to-Shoot mode is active</strong>.
-              </span>
-            </div>
-          )}
-
-          {/* iOS permission prompt button */}
-          {permissionState === 'prompt' && isSecureContext && (
-            <div className="mt-2.5 p-2 bg-amber-950/70 border border-amber-500/80 rounded flex items-center justify-between">
-              <span className="text-[11px] font-mono text-amber-200">
-                iOS motion permission needed:
-              </span>
               <button
-                onClick={handleEnableSensors}
-                className="ml-2 px-3 py-1.5 rounded bg-amber-500 text-stone-950 text-xs font-mono font-bold hover:bg-amber-400 active:scale-95 shadow"
+                onClick={() => setShowSensorSettings(!showSensorSettings)}
+                className="p-1 rounded text-stone-400 hover:text-amber-300"
+                title="Calibration & Settings"
               >
-                ENABLE SENSORS
+                <Sliders size={16} />
               </button>
             </div>
-          )}
+
+            {/* Quick Toggle Input Mode Button */}
+            <div className="mt-2.5">
+              {isTapMode ? (
+                <button
+                  onClick={handleEnableSensors}
+                  className="w-full py-2 px-3 rounded bg-gradient-to-r from-amber-600 to-yellow-600 text-stone-950 text-xs font-mono font-bold hover:brightness-110 active:scale-95 shadow flex items-center justify-center space-x-1.5 cursor-pointer"
+                >
+                  <Smartphone size={14} />
+                  <span>ENABLE POCKET DRAW SENSOR</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => setIsTapMode(true)}
+                  className="w-full py-1.5 px-3 rounded bg-stone-800 text-amber-300 border border-stone-700 text-xs font-mono hover:bg-stone-750 active:scale-95 flex items-center justify-center space-x-1.5 cursor-pointer"
+                >
+                  <MousePointer size={14} />
+                  <span>SWITCH TO TAP-TO-SHOOT</span>
+                </button>
+              )}
+            </div>
+
+            {/* Insecure HTTP Notice */}
+            {!isSecureContext && (
+              <div className="mt-2.5 p-2 bg-amber-950/70 border border-amber-600/70 rounded text-[11px] font-mono text-amber-200 flex items-start space-x-1.5">
+                <Info size={14} className="mt-0.5 flex-shrink-0 text-amber-400" />
+                <span>
+                  Browsers require HTTPS for phone motion sensors. Running on HTTP: <strong>Tap-to-Shoot mode is active</strong>.
+                </span>
+              </div>
+            )}
+
+            {/* Permission Denied Notice */}
+            {permissionState === 'denied' && (
+              <div className="mt-2 p-1.5 bg-red-950/80 border border-red-700 rounded text-[11px] font-mono text-red-200">
+                Motion sensor access was blocked. Tap-to-shoot fallback is active.
+              </div>
+            )}
 
           {/* Real-time Diagnostics Display */}
           <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] font-mono">

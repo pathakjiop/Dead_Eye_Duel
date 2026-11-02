@@ -1,4 +1,4 @@
-import React, { useReducer, useEffect, useCallback, useRef } from 'react';
+import React, { useReducer, useEffect, useCallback, useRef, useState } from 'react';
 import { gameReducer, initialState } from './game/reducer';
 import {
   SCREENS,
@@ -13,6 +13,7 @@ import { useMotionShot } from './hooks/useMotionShot';
 
 import DesertBackground from './components/DesertBackground';
 import GrainOverlay from './components/GrainOverlay';
+import NetworkModal from './components/NetworkModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import HomeScreen from './screens/HomeScreen';
 import CreateRoomScreen from './screens/CreateRoomScreen';
@@ -23,7 +24,18 @@ import MatchEndScreen from './screens/MatchEndScreen';
 
 export default function App() {
   const [state, dispatch] = useReducer(gameReducer, initialState);
+  const [showNetworkModal, setShowNetworkModal] = useState(false);
+  const [inAppNotice, setInAppNotice] = useState(false);
   const sound = useSound();
+
+  useEffect(() => {
+    if (typeof navigator !== 'undefined') {
+      const ua = navigator.userAgent || navigator.vendor || window.opera || '';
+      if (/FBAN|FBAV|Instagram|WhatsApp|Telegram|Line|Twitter|Snapchat/i.test(ua)) {
+        setInAppNotice(true);
+      }
+    }
+  }, []);
 
   const holsterTimerRef = useRef(null);
   const waitTimerRef = useRef(null);
@@ -437,11 +449,25 @@ export default function App() {
 
   return (
     <main className="relative w-full h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col bg-desert-dark text-desert-sand font-mono select-none">
+      {/* In-app browser warning banner (WhatsApp, Instagram, etc.) */}
+      {inAppNotice && (
+        <div className="w-full bg-amber-500 text-stone-950 px-3 py-1.5 text-[11px] font-mono font-bold flex items-center justify-between z-50 shadow-md">
+          <span>⚠️ In-app browser detected. Tap "..." at top-right & select "Open in Chrome/Safari" for multiplayer & sensors!</span>
+          <button onClick={() => setInAppNotice(false)} className="ml-2 font-bold px-1.5 py-0.5 rounded bg-stone-950/20 active:scale-95 cursor-pointer">✕</button>
+        </div>
+      )}
+
       {/* 1. Procedural Desert Background with Saguaros & Adobe Wall */}
       <DesertBackground bulletHoles={state.bulletHoles} />
 
       {/* 2. Vintage 35mm Film Grain + Vignette + Tequila Heatwave Filter */}
       <GrainOverlay tequilaMode={state.tequilaMode} />
+
+      {/* Cross-Network Relay Settings Modal */}
+      <NetworkModal
+        isOpen={showNetworkModal}
+        onClose={() => setShowNetworkModal(false)}
+      />
 
       {/* 3. Screen Views Switcher wrapped in ErrorBoundary */}
       <ErrorBoundary>
@@ -456,6 +482,7 @@ export default function App() {
             sound={sound}
             tequilaMode={state.tequilaMode}
             onToggleTequila={() => dispatch({ type: 'TOGGLE_TEQUILA_MODE' })}
+            onOpenNetwork={() => setShowNetworkModal(true)}
           />
         )}
 

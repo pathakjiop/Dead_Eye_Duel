@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Volume2, VolumeX, Smartphone, Target, Flame } from 'lucide-react';
+import { Volume2, VolumeX, Smartphone, Target, Flame, Globe } from 'lucide-react';
 import { AVATARS } from '../game/avatars';
 import CalaveraAvatar from '../components/CalaveraAvatar';
 import PapelPicado from '../components/PapelPicado';
@@ -15,6 +15,7 @@ export default function HomeScreen({
   sound,
   tequilaMode,
   onToggleTequila,
+  onOpenNetwork,
 }) {
   const [name, setName] = useState(player.name || 'El Tirador');
 
@@ -59,14 +60,24 @@ export default function HomeScreen({
             <span>{tequilaMode ? 'TEQUILA ON!' : 'TEQUILA'}</span>
           </button>
 
-          {/* Sound Mute/Unmute */}
-          <button
-            onClick={handleSoundToggle}
-            className="p-2 rounded-full bg-stone-900/80 border border-amber-700/60 text-amber-400 hover:text-amber-200 shadow-md transition-transform active:scale-95"
-            title={sound.muted ? 'Unmute Audio' : 'Mute Audio'}
-          >
-            {sound.muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-          </button>
+          {/* Action Buttons: Network & Sound */}
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={onOpenNetwork}
+              className="p-2 rounded-full bg-stone-900/80 border border-amber-700/60 text-amber-400 hover:text-amber-200 shadow-md transition-transform active:scale-95 cursor-pointer"
+              title="Network & Cross-Network Settings"
+            >
+              <Globe size={18} />
+            </button>
+
+            <button
+              onClick={handleSoundToggle}
+              className="p-2 rounded-full bg-stone-900/80 border border-amber-700/60 text-amber-400 hover:text-amber-200 shadow-md transition-transform active:scale-95 cursor-pointer"
+              title={sound.muted ? 'Unmute Audio' : 'Mute Audio'}
+            >
+              {sound.muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+            </button>
+          </div>
         </div>
       </div>
 

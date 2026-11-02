@@ -20,26 +20,66 @@ export function formatPeerId(code) {
   return `${PEER_PREFIX}${String(code || '').trim().toLowerCase()}`;
 }
 
-// Official Metered.ca OpenRelay STUN + TURN servers for cross-network cellular/Wi-Fi traversal
-const ICE_SERVERS = [
+// Rock-solid 2-server ICE config (Google STUN + Metered OpenRelay TCP/TLS over 443)
+// Keeping exactly 2 servers prevents the browser "5 or more servers slows discovery" warning
+export const DEFAULT_ICE_SERVERS = [
   { urls: 'stun:stun.l.google.com:19302' },
-  { urls: 'stun:openrelay.metered.ca:80' },
   {
-    urls: 'turn:openrelay.metered.ca:80',
-    username: 'openrelayproject',
-    credential: 'openrelayproject',
-  },
-  {
-    urls: 'turn:openrelay.metered.ca:443',
-    username: 'openrelayproject',
-    credential: 'openrelayproject',
-  },
-  {
-    urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+    urls: [
+      'turn:openrelay.metered.ca:443?transport=tcp',
+      'turns:openrelay.metered.ca:443?transport=tcp',
+    ],
     username: 'openrelayproject',
     credential: 'openrelayproject',
   },
 ];
+
+let cachedIceServers = null;
+
+// Dynamic ICE servers fetcher with local storage and Vercel serverless integration
+export async function fetchIceServers() {
+  if (cachedIceServers) return cachedIceServers;
+
+  // 1. Check custom Metered app & API key saved in localStorage
+  try {
+    if (typeof window !== 'undefined') {
+      const customApp = localStorage.getItem('dead_eye_metered_app');
+      const customKey = localStorage.getItem('dead_eye_metered_key');
+      if (customApp && customKey) {
+        const res = await fetch(
+          `https://${customApp.trim()}.metered.live/api/v1/turn/credentials?apiKey=${customKey.trim()}`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            cachedIceServers = data;
+            return data;
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('Custom metered fetch failed:', e);
+  }
+
+  // 2. Try fetching from /api/turn (Vercel Serverless Function)
+  try {
+    const res = await fetch('/api/turn');
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        cachedIceServers = data;
+        return data;
+      }
+    }
+  } catch (e) {
+    console.warn('/api/turn fetch failed:', e);
+  }
+
+  // 3. Fallback to default
+  cachedIceServers = DEFAULT_ICE_SERVERS;
+  return DEFAULT_ICE_SERVERS;
+}
 
 export function usePeer({
   playerProfile,
@@ -63,6 +103,11 @@ export function usePeer({
   const onOpponentConnectedRef = useRef(onOpponentConnected);
   const onMessageRef = useRef(onMessage);
   const onConnectionChangeRef = useRef(onConnectionChange);
+
+  // Prefetch ICE servers on hook load
+  useEffect(() => {
+    fetchIceServers().catch(() => {});
+  }, []);
 
   useEffect(() => {
     playerProfileRef.current = playerProfile;
@@ -274,7 +319,12 @@ export function usePeer({
       conn.on('error', (err) => {
         clearHandshake();
         console.warn('Peer connection error:', err);
-        setPeerError(err.message || 'Connection error');
+        const msg = String(err.message || '');
+        if (msg.includes('Negotiation') || msg.includes('ICE')) {
+          setPeerError('Cross-network firewall blocked connection. Try turning off VPN or use same Wi-Fi / Hotspot.');
+        } else {
+          setPeerError(err.message || 'Connection error');
+        }
       });
     },
     [runClockSync]
@@ -282,20 +332,21 @@ export function usePeer({
 
   // Host creates a room
   const createRoom = useCallback(
-    (roomCode) => {
+    async (roomCode) => {
       disconnect();
       setIsConnecting(true);
       setPeerError(null);
 
       const targetPeerId = formatPeerId(roomCode);
+      const iceServers = await fetchIceServers();
 
       try {
         const PeerClass = Peer;
         const peer = new PeerClass(targetPeerId, {
           debug: 1,
           config: {
-            iceServers: ICE_SERVERS,
-            iceTransportPolicy: 'all',
+            iceServers,
+            sdpSemantics: 'unified-plan',
           },
         });
 
@@ -310,6 +361,7 @@ export function usePeer({
           setupConnection(conn, true);
         });
 
+        // Auto-reconnect if signaling drops when tab sleeps
         peer.on('disconnected', () => {
           console.log('Peer disconnected from signaling server, reconnecting...');
           if (peer && !peer.destroyed) {
@@ -335,14 +387,15 @@ export function usePeer({
     [disconnect, setupConnection]
   );
 
-  // Guest joins an existing room with native SCTP data channel (no deprecated reliable: true flag)
+  // Guest joins an existing room
   const joinRoom = useCallback(
-    (targetRoomCode) => {
+    async (targetRoomCode) => {
       disconnect();
       setIsConnecting(true);
       setPeerError(null);
 
       const targetHostId = formatPeerId(targetRoomCode);
+      const iceServers = await fetchIceServers();
 
       const attemptConnect = () => {
         try {
@@ -350,8 +403,8 @@ export function usePeer({
           const peer = new PeerClass({
             debug: 1,
             config: {
-              iceServers: ICE_SERVERS,
-              iceTransportPolicy: 'all',
+              iceServers,
+              sdpSemantics: 'unified-plan',
             },
           });
 
@@ -359,8 +412,10 @@ export function usePeer({
 
           peer.on('open', (id) => {
             setPeerId(id);
-            // Native WebRTC data channel (ordered & reliable by default)
-            const conn = peer.connect(targetHostId);
+            // Native JSON serialization for reliable cross-platform packet delivery
+            const conn = peer.connect(targetHostId, {
+              serialization: 'json',
+            });
             setupConnection(conn, false);
           });
 
@@ -373,11 +428,16 @@ export function usePeer({
               joinRetryTimerRef.current = setTimeout(attemptConnect, 1400);
             } else {
               setIsConnecting(false);
-              setPeerError(
-                err.type === 'peer-unavailable'
-                  ? 'Room not found! Verify host has room open.'
-                  : err.message || 'Could not connect to rival'
-              );
+              const msg = String(err.message || '');
+              if (msg.includes('Negotiation') || msg.includes('ICE')) {
+                setPeerError('Cross-network firewall blocked connection. Try turning off VPN or use same Wi-Fi / Hotspot.');
+              } else {
+                setPeerError(
+                  err.type === 'peer-unavailable'
+                    ? 'Room not found! Verify host has room open.'
+                    : err.message || 'Could not connect to rival'
+                );
+              }
             }
           });
         } catch (err) {
